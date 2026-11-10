@@ -13,11 +13,27 @@ from app.routes.subjects import router as subject_router
 from app.routes.materials import router as material_router
 from app.routes.announcements import router as announcement_router
 
+
 app = FastAPI(
     title="NIE PDF HUB API",
     description="Academic Study Material Portal",
     version="1.0.0"
 )
+
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://nie-pdf-hub-6vi5.vercel.app",
+        "https://nie-pdf-hub-6vi5-git-main-itzmeevaruns-projects.vercel.app",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Register API routers
 app.include_router(admin_router)
@@ -28,15 +44,8 @@ app.include_router(subject_router)
 app.include_router(material_router)
 app.include_router(announcement_router)
 
-# CORS configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
+# Home route
 @app.get("/")
 async def home():
     return {
@@ -44,6 +53,8 @@ async def home():
         "status": "running"
     }
 
+
+# API health check
 @app.get("/api/health")
 async def health_check():
     return {
@@ -51,6 +62,8 @@ async def health_check():
         "project": "NIE PDF HUB"
     }
 
+
+# Database health check
 @app.get("/api/health/database")
 async def database_health():
     try:
