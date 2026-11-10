@@ -4,7 +4,7 @@ import { Routes, Route } from "react-router-dom";
 // Student pages
 import Home from "./pages/Home";
 import Departments from "./pages/Departments";
-import AcademicYears from "./pages/AcademicYears";
+import AcademicYears from "./pages/academicyears";
 import Semesters from "./pages/Semesters";
 import Subjects from "./pages/Subjects";
 import Materials from "./pages/Materials";
