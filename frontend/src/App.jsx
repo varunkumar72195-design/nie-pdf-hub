@@ -5,7 +5,7 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Departments from "./pages/Departments";
 import AcademicYears from "./pages/academicyears";
-import Semesters from "./pages/Semesters";
+import Semesters from "./pages/semesters";
 import Subjects from "./pages/Subjects";
 import Materials from "./pages/Materials";
 import PDFViewer from "./pages/PDFViewer";
@@ -26,7 +26,11 @@ function App() {
     <Routes>
       {/* PUBLIC STUDENT PORTAL */}
       <Route path="/" element={<Home />} />
-      <Route path="/departments" element={<Departments />} />
+
+      <Route
+        path="/departments"
+        element={<Departments />}
+      />
 
       <Route
         path="/departments/:departmentId/years"
@@ -61,14 +65,45 @@ function App() {
 
       {/* ADMIN LAYOUT */}
       <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="departments" element={<DepartmentManagement />} />
-        <Route path="academic-years" element={<AcademicYearManagement />} />
-        <Route path="semesters" element={<SemesterManagement />} />
-        <Route path="subjects" element={<SubjectManagement />} />
-        <Route path="materials" element={<MaterialManagement />} />
-        <Route path="settings" element={<AdminSettings />} />
+        <Route
+          index
+          element={<AdminDashboard />}
+        />
+
+        <Route
+          path="dashboard"
+          element={<AdminDashboard />}
+        />
+
+        <Route
+          path="departments"
+          element={<DepartmentManagement />}
+        />
+
+        <Route
+          path="academic-years"
+          element={<AcademicYearManagement />}
+        />
+
+        <Route
+          path="semesters"
+          element={<SemesterManagement />}
+        />
+
+        <Route
+          path="subjects"
+          element={<SubjectManagement />}
+        />
+
+        <Route
+          path="materials"
+          element={<MaterialManagement />}
+        />
+
+        <Route
+          path="settings"
+          element={<AdminSettings />}
+        />
       </Route>
 
       {/* FALLBACK */}
