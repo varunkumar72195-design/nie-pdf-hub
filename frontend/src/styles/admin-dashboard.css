@@ -1,0 +1,741 @@
+
+/* =====================================
+   ADMIN DASHBOARD
+===================================== */
+
+.admin-dashboard {
+  width: 100%;
+  min-height: auto;
+  display: block;
+  background: transparent;
+  color: #172033;
+  box-sizing: border-box;
+}
+
+.admin-dashboard *,
+.admin-dashboard *::before,
+.admin-dashboard *::after {
+  box-sizing: border-box;
+}
+
+/* =====================================
+   DASHBOARD STATISTICS
+===================================== */
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.admin-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  min-width: 0;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #edf0f5;
+  border-radius: 14px;
+  box-shadow: 0 3px 15px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+}
+
+.admin-stat-icon {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+}
+
+.departments-icon {
+  color: #2457d6;
+  background: #eaf0ff;
+}
+
+.subjects-icon {
+  color: #7c3aed;
+  background: #f1eaff;
+}
+
+.materials-icon {
+  color: #16a34a;
+  background: #e9f9ef;
+}
+
+.admin-stat-info {
+  min-width: 0;
+}
+
+.admin-stat-info p {
+  color: #64748b;
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+
+.admin-stat-info h2 {
+  color: #172033;
+  font-size: 28px;
+  font-weight: 750;
+  margin: 0;
+}
+
+/* =====================================
+   STORAGE SECTION
+===================================== */
+
+.storage-section {
+  width: 100%;
+  margin: 30px 0 35px;
+}
+
+.storage-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.storage-section-header h2 {
+  color: #172033;
+  font-size: 21px;
+  margin: 0 0 6px;
+}
+
+.storage-section-header p {
+  color: #788397;
+  font-size: 14px;
+  margin: 0;
+}
+
+.storage-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid #dce3ee;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #26364d;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.storage-refresh-btn:hover {
+  background: #f1f5ff;
+  border-color: #b8c9ed;
+}
+
+.storage-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =====================================
+   STORAGE CARDS
+===================================== */
+
+.storage-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.storage-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+  padding: 22px;
+  background: #ffffff;
+  border: 1px solid #e8edf4;
+  border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(20, 35, 60, 0.035);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.storage-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 18px rgba(20, 35, 60, 0.06);
+}
+
+.storage-card-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+}
+
+.database-icon {
+  background: #e9f1ff;
+  color: #3478df;
+}
+
+.files-icon {
+  background: #e9f9ef;
+  color: #199653;
+}
+
+.cloud-icon {
+  background: #f1eaff;
+  color: #8253d5;
+}
+
+.harddrive-icon {
+  background: #fff3e5;
+  color: #e68a24;
+}
+
+.storage-card > div:last-child {
+  min-width: 0;
+}
+
+.storage-card p {
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 2px 0 8px;
+}
+
+.storage-card h3 {
+  color: #182438;
+  font-size: 23px;
+  font-weight: 750;
+  margin: 0 0 7px;
+  overflow-wrap: anywhere;
+}
+
+.storage-card span {
+  color: #98a2b3;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =====================================
+   STORAGE LOADING
+===================================== */
+
+.storage-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #e8edf4;
+  border-radius: 12px;
+  color: #667085;
+  font-size: 14px;
+}
+
+/* =====================================
+   STORAGE ERROR
+===================================== */
+
+.storage-error {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 16px;
+  background: #fff2f2;
+  color: #bd3434;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.storage-error p {
+  margin: 0;
+}
+
+.storage-error button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 1px solid #f0caca;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #bd3434;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* =====================================
+   STORAGE CAPACITY
+===================================== */
+
+.storage-capacity-card {
+  padding: 24px;
+  margin-top: 20px;
+  background: #ffffff;
+  border: 1px solid #e8edf4;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035);
+}
+
+.storage-capacity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.storage-capacity-header h3 {
+  color: #172033;
+  font-size: 17px;
+  margin: 0 0 5px;
+}
+
+.storage-capacity-header p {
+  color: #788397;
+  font-size: 13px;
+  margin: 0;
+}
+
+.storage-capacity-header strong {
+  color: #2457d6;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.storage-progress-track {
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  background: #e8edf5;
+  border-radius: 20px;
+}
+
+.storage-progress-fill {
+  height: 100%;
+  background: #2457d6;
+  border-radius: 20px;
+  transition: width 0.4s ease;
+}
+
+.storage-capacity-details {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.storage-capacity-details span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.storage-capacity-note {
+  margin: 18px 0 0;
+  padding: 13px 15px;
+  background: #f4f7fc;
+  border-radius: 9px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =====================================
+   BACKEND DISK INFORMATION
+===================================== */
+
+.storage-disk-info {
+  padding: 22px;
+  margin-top: 20px;
+  background: #ffffff;
+  border: 1px solid #e8edf4;
+  border-radius: 14px;
+}
+
+.storage-disk-info h3 {
+  margin: 0 0 18px;
+  color: #172033;
+  font-size: 16px;
+}
+
+.storage-disk-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.storage-disk-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 9px;
+}
+
+.storage-disk-grid span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.storage-disk-grid strong {
+  color: #172033;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+/* =====================================
+   STORAGE SUMMARY
+===================================== */
+
+.storage-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  padding: 15px 17px;
+  margin-top: 18px;
+  background: #f4f7fc;
+  border-radius: 10px;
+}
+
+.storage-summary span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* =====================================
+   RECENT PDF UPLOADS
+===================================== */
+
+.admin-recent-section {
+  width: 100%;
+  padding: 25px;
+  background: #ffffff;
+  border: 1px solid #edf0f5;
+  border-radius: 14px;
+  box-shadow: 0 3px 15px rgba(15, 23, 42, 0.04);
+}
+
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.admin-section-header h2 {
+  color: #172033;
+  font-size: 20px;
+  margin: 0 0 7px;
+}
+
+.admin-section-header p {
+  color: #64748b;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Table */
+
+.admin-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid #edf0f5;
+  text-align: left;
+  font-size: 13px;
+}
+
+.admin-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-table td {
+  color: #475569;
+}
+
+.admin-table tbody tr:hover {
+  background: #fafcff;
+}
+
+.recent-file-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+  color: #26364d;
+  font-weight: 600;
+}
+
+.recent-file-title svg {
+  flex-shrink: 0;
+  color: #2457d6;
+}
+
+.recent-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.recent-file-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.recent-view-btn {
+  color: #2457d6;
+}
+
+.recent-download-btn {
+  color: #159653;
+}
+
+.recent-file-actions a:hover {
+  text-decoration: underline;
+}
+
+/* =====================================
+   EMPTY STATE
+===================================== */
+
+.admin-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 45px 20px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.admin-empty-state h3 {
+  color: #334155;
+  font-size: 16px;
+  margin: 5px 0 0;
+}
+
+.admin-empty-state p {
+  color: #64748b;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* =====================================
+   LOADING AND ERROR STATES
+===================================== */
+
+.admin-loading {
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 25px;
+  color: #475569;
+  text-align: center;
+}
+
+.admin-loading p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.loading-spinner {
+  animation: admin-spin 1s linear infinite;
+}
+
+@keyframes admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-error-state h3 {
+  margin: 0;
+  color: #172033;
+}
+
+.admin-error-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.admin-error-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background: #2457d6;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-error-actions button:last-child {
+  background: #64748b;
+}
+
+.admin-error-actions button:hover {
+  opacity: 0.9;
+}
+
+/* =====================================
+   RESPONSIVE DESIGN
+===================================== */
+
+@media (max-width: 1100px) {
+  .storage-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .storage-disk-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-stat-card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .storage-section {
+    margin-top: 24px;
+    margin-bottom: 25px;
+  }
+
+  .storage-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .storage-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .storage-card {
+    padding: 18px;
+  }
+
+  .storage-capacity-card,
+  .storage-disk-info {
+    padding: 18px;
+  }
+
+  .storage-capacity-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .storage-capacity-details {
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .storage-disk-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .storage-error {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-recent-section {
+    padding: 16px;
+  }
+
+  .admin-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .storage-summary {
+    flex-direction: column;
+    gap: 9px;
+  }
+}
+
+@media (max-width: 380px) {
+  .storage-disk-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-stat-card {
+    padding: 16px;
+  }
+
+  .admin-stat-info h2 {
+    font-size: 24px;
+  }
+}
+.admin-dashboard {
+  width: 100%;
+  min-height: 100%;
+  display: block;
+  padding: 24px;
+  background: transparent;
+  color: #172033;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.admin-dashboard * {
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .admin-dashboard {
+    padding: 16px;
+  }
+}

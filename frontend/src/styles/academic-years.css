@@ -1,0 +1,197 @@
+
+.years-page {
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #172033;
+  font-family: Arial, sans-serif;
+}
+
+.years-navbar {
+  height: 75px;
+  padding: 0 9%;
+  background: white;
+  border-bottom: 1px solid #e5eaf1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.years-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: #172033;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.years-brand svg,
+.years-brand strong {
+  color: #2563eb;
+}
+
+.years-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #475569;
+  font-size: 14px;
+}
+
+.years-hero {
+  padding: 75px 20px;
+  text-align: center;
+  background: linear-gradient(120deg, #eff6ff, #f8fafc);
+}
+
+.years-hero span {
+  color: #2563eb;
+  font-size: 12px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.years-hero h1 {
+  font-size: 40px;
+  margin: 16px 0;
+}
+
+.years-hero p {
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.years-content {
+  max-width: 1200px;
+  margin: auto;
+  padding: 55px 30px 90px;
+}
+
+.years-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 35px;
+}
+
+.years-heading h2 {
+  margin: 0 0 8px;
+  font-size: 23px;
+}
+
+.years-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.years-heading > svg {
+  color: #2563eb;
+}
+
+.years-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.year-card {
+  background: white;
+  padding: 30px;
+  border: 1px solid #e5eaf1;
+  border-radius: 15px;
+  text-decoration: none;
+  color: #172033;
+  transition: 0.25s;
+}
+
+.year-card:hover {
+  transform: translateY(-5px);
+  border-color: #93b4ff;
+  box-shadow: 0 15px 35px rgba(37, 99, 235, 0.09);
+}
+
+.year-icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #2563eb;
+  border-radius: 14px;
+}
+
+.year-card h3 {
+  margin: 22px 0 10px;
+  font-size: 21px;
+}
+
+.year-card p {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.year-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.years-status {
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  padding: 55px 20px;
+  color: #64748b;
+}
+
+.years-status.error {
+  color: #be123c;
+}
+
+.years-status button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.years-footer {
+  background: #111c32;
+  color: #a8b5c9;
+  padding: 28px;
+  text-align: center;
+  font-size: 13px;
+}
+
+@media (max-width: 750px) {
+  .years-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .years-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .years-hero h1 {
+    font-size: 30px;
+  }
+
+  .years-navbar {
+    padding: 0 5%;
+  }
+}

@@ -1,0 +1,129 @@
+
+.admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0f172a, #1e3a8a);
+  padding: 20px;
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.admin-login-logo {
+  width: 65px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf0ff;
+  color: #2457d6;
+  border-radius: 16px;
+  margin: 0 auto 20px;
+}
+
+.admin-login-card h1 {
+  text-align: center;
+  margin: 0;
+  color: #172033;
+  font-size: 28px;
+}
+
+.admin-login-subtitle {
+  text-align: center;
+  color: #64748b;
+  margin: 10px 0 30px;
+  font-size: 14px;
+}
+
+.admin-login-card form {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-login-card label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.admin-input-group {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 13px;
+  border: 1px solid #dbe1ea;
+  border-radius: 9px;
+  margin-bottom: 22px;
+  color: #64748b;
+}
+
+.admin-input-group:focus-within {
+  border-color: #2457d6;
+  box-shadow: 0 0 0 3px rgba(36, 87, 214, 0.1);
+}
+
+.admin-input-group input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+.password-toggle {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.admin-login-button {
+  height: 48px;
+  border: none;
+  border-radius: 9px;
+  background: #2457d6;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-login-button:hover {
+  background: #1d46b0;
+}
+
+.admin-login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.admin-login-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin: -10px 0 18px;
+}
+
+.admin-login-footer {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
+  margin: 25px 0 0;
+}
+
+@media (max-width: 480px) {
+  .admin-login-card {
+    padding: 28px 22px;
+  }
+}
