@@ -5,7 +5,7 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Departments from "./pages/Departments";
 import AcademicYears from "./pages/AcademicYears";
-import Semesters from "./pages/semesters";
+import Semesters from "./pages/Semesters";
 import Subjects from "./pages/Subjects";
 import Materials from "./pages/Materials";
 import PDFViewer from "./pages/PDFViewer";
