@@ -1,407 +1,151 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Upload,
+  CalendarDays,
+  Plus,
   Search,
-  FileText,
-  Eye,
-  Download,
   Pencil,
   Trash2,
   X,
   RefreshCw,
-  FolderOpen,
-  FilePlus2,
-  CalendarDays,
-  HardDrive,
+  Building2,
+  GraduationCap,
+  Layers3,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 import API from "../services/api";
-import "../styles/material-management.css";
+import "../styles/academic-year-management.css";
 
-function MaterialManagement() {
+function AcademicYearManagement() {
   const [departments, setDepartments] = useState([]);
   const [years, setYears] = useState([]);
-  const [semesters, setSemesters] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [materials, setMaterials] = useState([]);
 
-  const [departmentId, setDepartmentId] = useState("");
-  const [yearId, setYearId] = useState("");
-  const [semesterId, setSemesterId] = useState("");
-  const [subjectId, setSubjectId] = useState("");
-
-  const [loading, setLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   const [search, setSearch] = useState("");
+  const [filterDepartment, setFilterDepartment] = useState("all");
 
   const [showForm, setShowForm] = useState(false);
-  const [editingMaterial, setEditingMaterial] = useState(null);
+  const [editingYear, setEditingYear] = useState(null);
 
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    file: null,
+    department_id: "",
+    year_number: "",
+    name: "",
   });
-
-  const [selectedFileName, setSelectedFileName] = useState("");
-
-  // --------------------------------------------------
-  // ERROR HANDLING
-  // --------------------------------------------------
 
   const getErrorMessage = (err, fallback) => {
     const status = err.response?.status;
     const detail = err.response?.data?.detail;
 
     if (status === 401 || status === 403) {
-      return "Admin session expired. Please login again.";
+      return "Admin session expired. Please log in again.";
+    }
+
+    if (status === 409) {
+      return typeof detail === "string"
+        ? detail
+        : "This academic year already exists or cannot be deleted.";
     }
 
     if (Array.isArray(detail)) {
       return detail
-        .map((item) => {
-          if (typeof item === "string") return item;
-
-          if (typeof item === "object" && item !== null) {
-            const field = Array.isArray(item.loc)
-              ? item.loc.join(" → ")
-              : "Field";
-
-            return `${field}: ${item.msg || "Invalid value"}`;
-          }
-
-          return String(item);
-        })
+        .map((item) =>
+          typeof item === "object"
+            ? `${item.loc?.join(" → ") || "Field"}: ${item.msg}`
+            : String(item)
+        )
         .join(" | ");
     }
 
-    if (typeof detail === "string") {
-      return detail;
-    }
-
-    if (detail && typeof detail === "object") {
-      return JSON.stringify(detail);
-    }
-
-    if (status === 422) {
-      return "Invalid request. Please check the submitted fields.";
-    }
+    if (typeof detail === "string") return detail;
 
     if (!err.response) {
-      return "Cannot connect to backend. Check whether FastAPI is running.";
+      return "Cannot connect to the backend. Please check your connection.";
     }
 
     return fallback;
   };
 
-  // --------------------------------------------------
-  // INITIAL DATA
-  // --------------------------------------------------
-
-  useEffect(() => {
-    const initializePage = async () => {
-      try {
-        await Promise.all([
-          fetchDepartments(),
-          fetchYears(),
-        ]);
-      } finally {
-        setPageLoading(false);
-      }
-    };
-
-    initializePage();
-  }, []);
-
-  // --------------------------------------------------
-  // DEPARTMENT CHANGE
-  // --------------------------------------------------
-
-  useEffect(() => {
-    if (!departmentId) {
-      setYearId("");
-      setSemesterId("");
-      setSubjectId("");
-      setSemesters([]);
-      setSubjects([]);
-      setMaterials([]);
-      return;
-    }
-
-    const availableYears = years.filter(
-      (year) =>
-        String(year.department_id) === String(departmentId)
-    );
-
-    const selectedYearExists = availableYears.some(
-      (year) => String(year.id) === String(yearId)
-    );
-
-    if (yearId && !selectedYearExists) {
-      setYearId("");
-      setSemesterId("");
-      setSubjectId("");
-      setSemesters([]);
-      setSubjects([]);
-      setMaterials([]);
-    }
-  }, [departmentId, years]);
-
-  // --------------------------------------------------
-  // YEAR CHANGE
-  // --------------------------------------------------
-
-  useEffect(() => {
-    if (yearId) {
-      fetchSemesters(yearId);
-    } else {
-      setSemesters([]);
-      setSemesterId("");
-      setSubjects([]);
-      setSubjectId("");
-      setMaterials([]);
-    }
-  }, [yearId]);
-
-  // --------------------------------------------------
-  // SEMESTER CHANGE
-  // --------------------------------------------------
-
-  useEffect(() => {
-    if (semesterId) {
-      fetchSubjects(semesterId);
-    } else {
-      setSubjects([]);
-      setSubjectId("");
-      setMaterials([]);
-    }
-  }, [semesterId]);
-
-  // --------------------------------------------------
-  // SUBJECT CHANGE
-  // --------------------------------------------------
-
-  useEffect(() => {
-    if (subjectId) {
-      fetchMaterials(subjectId);
-    } else {
-      setMaterials([]);
-    }
-  }, [subjectId]);
-
-  // --------------------------------------------------
-  // FETCH DEPARTMENTS
-  // --------------------------------------------------
-
-  const fetchDepartments = async () => {
-    try {
-      const response = await API.get("/departments/");
-      setDepartments(
-        Array.isArray(response.data) ? response.data : []
-      );
-    } catch (err) {
-      console.error("Department error:", err.response?.data || err);
-      setError(
-        getErrorMessage(err, "Unable to load departments.")
-      );
-    }
-  };
-
-  // --------------------------------------------------
-  // FETCH ACADEMIC YEARS
-  // --------------------------------------------------
-
-  const fetchYears = async () => {
-    try {
-      const response = await API.get("/academic-years", {
-        requiresAuth: true,
-      });
-
-      setYears(
-        Array.isArray(response.data) ? response.data : []
-      );
-    } catch (err) {
-      console.error("Academic year error:", err.response?.data || err);
-      setError(
-        getErrorMessage(err, "Unable to load academic years.")
-      );
-    }
-  };
-
-  // --------------------------------------------------
-  // FETCH SEMESTERS
-  // --------------------------------------------------
-
-  const fetchSemesters = async (id) => {
-    try {
-      const response = await API.get(
-        `/academic-years/${id}/semesters`
-      );
-
-      setSemesters(
-        Array.isArray(response.data) ? response.data : []
-      );
-    } catch (err) {
-      console.error("Semester error:", err.response?.data || err);
-      setError(
-        getErrorMessage(err, "Unable to load semesters.")
-      );
-    }
-  };
-
-  // --------------------------------------------------
-  // FETCH SUBJECTS
-  // --------------------------------------------------
-
-  const fetchSubjects = async (id) => {
-    try {
-      const response = await API.get(
-        `/semesters/${id}/subjects`
-      );
-
-      setSubjects(
-        Array.isArray(response.data) ? response.data : []
-      );
-    } catch (err) {
-      console.error("Subject error:", err.response?.data || err);
-      setError(
-        getErrorMessage(err, "Unable to load subjects.")
-      );
-    }
-  };
-
-  // --------------------------------------------------
-  // FETCH MATERIALS
-  // --------------------------------------------------
-
-  const fetchMaterials = async (id) => {
+  const fetchData = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await API.get(
-        `/subjects/${id}/materials`
+      const [departmentResponse, yearResponse] = await Promise.all([
+        API.get("/departments/"),
+        API.get("/academic-years", { requiresAuth: true }),
+      ]);
+
+      setDepartments(
+        Array.isArray(departmentResponse.data)
+          ? departmentResponse.data
+          : []
       );
 
-      setMaterials(
-        Array.isArray(response.data) ? response.data : []
+      setYears(
+        Array.isArray(yearResponse.data)
+          ? yearResponse.data
+          : []
       );
     } catch (err) {
-      console.error("Material error:", err.response?.data || err);
-
+      console.error("Academic year fetch error:", err.response?.data || err);
       setError(
-        getErrorMessage(err, "Unable to load PDF materials.")
+        getErrorMessage(err, "Unable to load academic years.")
       );
-
-      setMaterials([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // --------------------------------------------------
-  // RESET FORM
-  // --------------------------------------------------
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const resetForm = () => {
     setFormData({
-      title: "",
-      description: "",
-      file: null,
+      department_id: "",
+      year_number: "",
+      name: "",
     });
 
-    setSelectedFileName("");
-    setEditingMaterial(null);
+    setEditingYear(null);
     setShowForm(false);
   };
 
-  // --------------------------------------------------
-  // OPEN UPLOAD FORM
-  // --------------------------------------------------
-
-  const openUploadForm = () => {
-    setEditingMaterial(null);
+  const openCreateForm = () => {
+    setEditingYear(null);
 
     setFormData({
-      title: "",
-      description: "",
-      file: null,
+      department_id: "",
+      year_number: "",
+      name: "",
     });
 
-    setSelectedFileName("");
     setError("");
     setSuccess("");
     setShowForm(true);
   };
 
-  // --------------------------------------------------
-  // OPEN EDIT FORM
-  // --------------------------------------------------
-
-  const openEditForm = (material) => {
-    setEditingMaterial(material);
+  const openEditForm = (year) => {
+    setEditingYear(year);
 
     setFormData({
-      title: material.title || "",
-      description: material.description || "",
-      file: null,
+      department_id: String(year.department_id),
+      year_number: String(year.year_number),
+      name: year.name || "",
     });
 
-    setSelectedFileName("");
     setError("");
     setSuccess("");
     setShowForm(true);
   };
-
-  // --------------------------------------------------
-  // FILE VALIDATION
-  // --------------------------------------------------
-
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      setFormData((previous) => ({
-        ...previous,
-        file: null,
-      }));
-
-      setSelectedFileName("");
-      return;
-    }
-
-    if (
-      file.type !== "application/pdf" ||
-      !file.name.toLowerCase().endsWith(".pdf")
-    ) {
-      setError("Please select a valid PDF file.");
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > 20 * 1024 * 1024) {
-      setError("PDF size must not exceed 20 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    setError("");
-
-    setFormData((previous) => ({
-      ...previous,
-      file,
-    }));
-
-    setSelectedFileName(file.name);
-  };
-
-  // --------------------------------------------------
-  // UPLOAD / UPDATE MATERIAL
-  // --------------------------------------------------
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -409,730 +153,458 @@ function MaterialManagement() {
     setError("");
     setSuccess("");
 
-    if (!editingMaterial && !subjectId) {
-      setError("Please select a subject first.");
+    if (!editingYear && !formData.department_id) {
+      setError("Please select a department.");
       return;
     }
 
-    if (!formData.title.trim()) {
-      setError("Please enter a PDF title.");
+    const yearNumber = Number(formData.year_number);
+
+    if (!Number.isInteger(yearNumber) || yearNumber < 1) {
+      setError("Please enter a valid academic year number.");
       return;
     }
 
-    if (!editingMaterial && !formData.file) {
-      setError("Please choose a PDF file.");
+    if (!formData.name.trim()) {
+      setError("Please enter an academic year name.");
       return;
     }
 
-    const payload = new FormData();
+    const payload = {
+      year_number: yearNumber,
+      name: formData.name.trim(),
+    };
 
-    payload.append("title", formData.title.trim());
-    payload.append("description", formData.description || "");
-
-    if (formData.file) {
-      payload.append("file", formData.file);
+    if (!editingYear) {
+      payload.department_id = Number(formData.department_id);
     }
 
-    if (!editingMaterial) {
-      payload.append("subject_id", String(subjectId));
-    }
-
-    // Debug: verify submitted form fields.
-    console.log("PDF FormData:");
-
-    for (const [key, value] of payload.entries()) {
-      console.log(
-        key,
-        value instanceof File ? value.name : value
-      );
-    }
-
-    setLoading(true);
+    setSaving(true);
 
     try {
-      if (editingMaterial) {
+      if (editingYear) {
         await API.put(
-          `/materials/${editingMaterial.id}`,
+          `/academic-years/${editingYear.id}`,
           payload,
-          {
-            requiresAuth: true,
-          }
+          { requiresAuth: true }
         );
 
-        setSuccess("PDF material updated successfully.");
+        setSuccess("Academic year updated successfully.");
       } else {
         await API.post(
-          "/materials",
+          "/academic-years",
           payload,
-          {
-            requiresAuth: true,
-          }
+          { requiresAuth: true }
         );
 
-        setSuccess("PDF uploaded successfully.");
+        setSuccess("Academic year created successfully.");
       }
 
       resetForm();
-
-      await fetchMaterials(subjectId);
+      await fetchData();
     } catch (err) {
-      console.error(
-        "Material save error:",
-        err.response?.data || err
-      );
-
+      console.error("Academic year save error:", err.response?.data || err);
       setError(
-        getErrorMessage(err, "Unable to save PDF material.")
+        getErrorMessage(err, "Unable to save academic year.")
       );
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  // --------------------------------------------------
-  // DELETE MATERIAL
-  // --------------------------------------------------
-
-  const handleDelete = async (material) => {
+  const handleDelete = async (year) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${material.title}"? This will also delete the stored PDF file.`
+      `Are you sure you want to delete "${year.name}"?`
     );
 
     if (!confirmed) return;
 
     setError("");
     setSuccess("");
-    setLoading(true);
 
     try {
       await API.delete(
-        `/materials/${material.id}`,
-        {
-          requiresAuth: true,
-        }
+        `/academic-years/${year.id}`,
+        { requiresAuth: true }
       );
 
-      setSuccess("PDF material deleted successfully.");
-
-      await fetchMaterials(subjectId);
+      setSuccess("Academic year deleted successfully.");
+      await fetchData();
     } catch (err) {
-      console.error(
-        "Material delete error:",
-        err.response?.data || err
-      );
-
+      console.error("Academic year delete error:", err.response?.data || err);
       setError(
-        getErrorMessage(err, "Unable to delete PDF material.")
+        getErrorMessage(
+          err,
+          "Unable to delete academic year."
+        )
       );
-    } finally {
-      setLoading(false);
     }
   };
 
-  // --------------------------------------------------
-  // PDF URL
-  // --------------------------------------------------
-
-  const getFileUrl = (path) => {
-    return new URL(
-      path,
-      API.defaults.baseURL
-    ).toString();
-  };
-
-  // --------------------------------------------------
-  // VIEW PDF
-  // --------------------------------------------------
-
-  const handleView = (material) => {
-    window.open(
-      getFileUrl(material.view_url),
-      "_blank",
-      "noopener,noreferrer"
+  const getDepartmentName = (departmentId) => {
+    const department = departments.find(
+      (item) => String(item.id) === String(departmentId)
     );
+
+    return department?.name || "Unknown department";
   };
 
-  // --------------------------------------------------
-  // DOWNLOAD PDF
-  // --------------------------------------------------
+  const filteredYears = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-  const handleDownload = (material) => {
-    const link = document.createElement("a");
+    return years.filter((year) => {
+      const departmentName = getDepartmentName(year.department_id);
 
-    link.href = getFileUrl(material.download_url);
-    link.download = material.file_name || "material.pdf";
+      const matchesSearch =
+        year.name?.toLowerCase().includes(query) ||
+        departmentName.toLowerCase().includes(query) ||
+        String(year.year_number).includes(query);
 
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  };
+      const matchesDepartment =
+        filterDepartment === "all" ||
+        String(year.department_id) === filterDepartment;
 
-  // --------------------------------------------------
-  // FORMAT FILE SIZE
-  // --------------------------------------------------
-
-  const formatFileSize = (bytes) => {
-    if (!bytes) return "0 KB";
-
-    if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
-  // --------------------------------------------------
-  // FORMAT DATE
-  // --------------------------------------------------
-
-  const formatDate = (date) => {
-    if (!date) return "—";
-
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+      return matchesSearch && matchesDepartment;
     });
-  };
-
-  // --------------------------------------------------
-  // SEARCH
-  // --------------------------------------------------
-
-  const filteredMaterials = materials.filter((material) => {
-    const query = search.toLowerCase();
-
-    return (
-      material.title?.toLowerCase().includes(query) ||
-      material.file_name?.toLowerCase().includes(query) ||
-      material.description?.toLowerCase().includes(query)
-    );
-  });
-
-  // --------------------------------------------------
-  // INITIAL LOADING
-  // --------------------------------------------------
-
-  if (pageLoading) {
-    return (
-      <div className="material-loading">
-        <RefreshCw className="spin" size={24} />
-        <p>Loading PDF management...</p>
-      </div>
-    );
-  }
-
-  // --------------------------------------------------
-  // MAIN UI
-  // --------------------------------------------------
+  }, [years, departments, search, filterDepartment]);
 
   return (
-    <div className="material-management">
-
-      <div className="material-page-header">
+    <div className="academic-year-page">
+      <div className="academic-year-header">
         <div>
-          <span className="material-eyebrow">
+          <span className="academic-year-eyebrow">
             ADMINISTRATION
           </span>
 
-          <h1>PDF Upload Management</h1>
+          <h1>Academic Year Management</h1>
 
           <p>
-            Upload, organize, update and manage academic PDF materials.
+            Create, organize and manage academic years across departments.
           </p>
         </div>
 
         <button
-          className="material-primary-btn"
-          onClick={openUploadForm}
-          disabled={!subjectId}
+          className="ay-primary-btn"
+          onClick={openCreateForm}
         >
-          <Upload size={18} />
-          Upload PDF
+          <Plus size={18} />
+          Add Academic Year
         </button>
       </div>
 
       {error && (
-        <div className="material-alert material-alert-error">
+        <div className="ay-alert ay-alert-error">
+          <AlertCircle size={19} />
           <span>{error}</span>
-
-          <button
-            onClick={() => setError("")}
-            aria-label="Close error"
-          >
+          <button onClick={() => setError("")} aria-label="Close error">
             <X size={17} />
           </button>
         </div>
       )}
 
       {success && (
-        <div className="material-alert material-alert-success">
+        <div className="ay-alert ay-alert-success">
+          <CheckCircle2 size={19} />
           <span>{success}</span>
-
-          <button
-            onClick={() => setSuccess("")}
-            aria-label="Close message"
-          >
+          <button onClick={() => setSuccess("")} aria-label="Close message">
             <X size={17} />
           </button>
         </div>
       )}
 
-      {/* ACADEMIC SELECTION */}
-
-      <section className="material-selection-card">
-
-        <div className="material-section-heading">
-          <FolderOpen size={20} />
-
+      <div className="ay-stats-grid">
+        <div className="ay-stat-card">
+          <div className="ay-stat-icon blue">
+            <CalendarDays size={23} />
+          </div>
           <div>
-            <h2>Select Academic Details</h2>
-            <p>Choose where the PDF materials belong.</p>
+            <span>Total Academic Years</span>
+            <h2>{years.length}</h2>
           </div>
         </div>
 
-        <div className="material-filter-grid">
-
-          <div className="material-field">
-            <label>Department</label>
-
-            <select
-              value={departmentId}
-              onChange={(e) => {
-                setDepartmentId(e.target.value);
-                setYearId("");
-                setSemesterId("");
-                setSubjectId("");
-              }}
-            >
-              <option value="">Select department</option>
-
-              {departments.map((department) => (
-                <option
-                  key={department.id}
-                  value={department.id}
-                >
-                  {department.name}
-                </option>
-              ))}
-            </select>
+        <div className="ay-stat-card">
+          <div className="ay-stat-icon purple">
+            <Building2 size={23} />
           </div>
-
-          <div className="material-field">
-            <label>Academic Year</label>
-
-            <select
-              value={yearId}
-              onChange={(e) => {
-                setYearId(e.target.value);
-                setSemesterId("");
-                setSubjectId("");
-              }}
-              disabled={!departmentId}
-            >
-              <option value="">Select academic year</option>
-
-              {years
-                .filter(
-                  (year) =>
-                    String(year.department_id) ===
-                    String(departmentId)
-                )
-                .map((year) => (
-                  <option
-                    key={year.id}
-                    value={year.id}
-                  >
-                    {year.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div className="material-field">
-            <label>Semester</label>
-
-            <select
-              value={semesterId}
-              onChange={(e) => {
-                setSemesterId(e.target.value);
-                setSubjectId("");
-              }}
-              disabled={!yearId}
-            >
-              <option value="">Select semester</option>
-
-              {semesters.map((semester) => (
-                <option
-                  key={semester.id}
-                  value={semester.id}
-                >
-                  {semester.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="material-field">
-            <label>Subject</label>
-
-            <select
-              value={subjectId}
-              onChange={(e) => setSubjectId(e.target.value)}
-              disabled={!semesterId}
-            >
-              <option value="">Select subject</option>
-
-              {subjects.map((subject) => (
-                <option
-                  key={subject.id}
-                  value={subject.id}
-                >
-                  {subject.name} ({subject.code})
-                </option>
-              ))}
-            </select>
-          </div>
-
-        </div>
-      </section>
-
-      {/* MATERIAL LIST */}
-
-      <section className="material-list-section">
-
-        <div className="material-list-header">
-
           <div>
-            <h2>Uploaded PDF Materials</h2>
+            <span>Total Departments</span>
+            <h2>{departments.length}</h2>
+          </div>
+        </div>
 
-            <p>
-              {subjectId
-                ? `${materials.length} PDF material(s) found`
-                : "Select a subject to view its PDF materials."}
-            </p>
+        <div className="ay-stat-card">
+          <div className="ay-stat-icon green">
+            <GraduationCap size={23} />
+          </div>
+          <div>
+            <span>Displayed Academic Years</span>
+            <h2>{filteredYears.length}</h2>
+          </div>
+        </div>
+      </div>
+
+      <section className="ay-content-card">
+        <div className="ay-content-header">
+          <div>
+            <h2>Academic Years</h2>
+            <p>Manage academic year records for each department.</p>
           </div>
 
-          <div className="material-search-box">
+          <button
+            className="ay-refresh-btn"
+            onClick={fetchData}
+            disabled={loading}
+            title="Refresh academic years"
+          >
+            <RefreshCw size={17} className={loading ? "ay-spin" : ""} />
+            Refresh
+          </button>
+        </div>
+
+        <div className="ay-toolbar">
+          <div className="ay-search">
             <Search size={18} />
-
             <input
               type="text"
-              placeholder="Search PDFs..."
+              placeholder="Search academic years..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              disabled={!subjectId}
+              onChange={(event) => setSearch(event.target.value)}
             />
           </div>
 
+          <select
+            className="ay-filter"
+            value={filterDepartment}
+            onChange={(event) => setFilterDepartment(event.target.value)}
+          >
+            <option value="all">All Departments</option>
+            {departments.map((department) => (
+              <option key={department.id} value={department.id}>
+                {department.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {!subjectId ? (
-
-          <div className="material-empty-state">
-            <FolderOpen size={42} />
-
-            <h3>Select a subject</h3>
-
-            <p>
-              Choose a department, year, semester and subject
-              to manage PDFs.
-            </p>
+        {loading ? (
+          <div className="ay-empty-state">
+            <RefreshCw size={28} className="ay-spin" />
+            <p>Loading academic years...</p>
           </div>
-
-        ) : loading && materials.length === 0 ? (
-
-          <div className="material-empty-state">
-            <RefreshCw className="spin" size={28} />
-            <p>Loading materials...</p>
-          </div>
-
-        ) : filteredMaterials.length === 0 ? (
-
-          <div className="material-empty-state">
-            <FilePlus2 size={42} />
-
-            <h3>No PDF materials found</h3>
-
+        ) : filteredYears.length === 0 ? (
+          <div className="ay-empty-state">
+            <CalendarDays size={42} />
+            <h3>No academic years found</h3>
             <p>
-              {search
-                ? "Try another search term."
-                : "Upload the first PDF for this subject."}
+              {search || filterDepartment !== "all"
+                ? "Try changing your search or department filter."
+                : "Add an academic year to get started."}
             </p>
-
-            {!search && (
-              <button
-                className="material-primary-btn"
-                onClick={openUploadForm}
-              >
-                <Upload size={17} />
-                Upload PDF
+            {!search && filterDepartment === "all" && (
+              <button className="ay-primary-btn" onClick={openCreateForm}>
+                <Plus size={17} />
+                Add Academic Year
               </button>
             )}
           </div>
-
         ) : (
-
-          <div className="material-table-wrapper">
-
-            <table className="material-table">
-
+          <div className="ay-table-wrapper">
+            <table className="ay-table">
               <thead>
                 <tr>
-                  <th>PDF Material</th>
-                  <th>File Size</th>
-                  <th>Uploaded Date</th>
+                  <th>Academic Year</th>
+                  <th>Year Number</th>
+                  <th>Department</th>
                   <th>Actions</th>
                 </tr>
               </thead>
 
               <tbody>
-
-                {filteredMaterials.map((material) => (
-
-                  <tr key={material.id}>
-
+                {filteredYears.map((year) => (
+                  <tr key={year.id}>
                     <td>
-                      <div className="material-file-cell">
-
-                        <div className="material-pdf-icon">
-                          <FileText size={22} />
+                      <div className="ay-name-cell">
+                        <div className="ay-row-icon">
+                          <CalendarDays size={20} />
                         </div>
-
                         <div>
-                          <strong>{material.title}</strong>
-
-                          <span>{material.file_name}</span>
-
-                          {material.description && (
-                            <small>{material.description}</small>
-                          )}
+                          <strong>{year.name}</strong>
+                          <span>ID: {year.id}</span>
                         </div>
-
                       </div>
                     </td>
 
                     <td>
-                      <span className="material-size">
-                        <HardDrive size={14} />
-                        {formatFileSize(material.file_size)}
+                      <span className="ay-year-badge">
+                        Year {year.year_number}
                       </span>
                     </td>
 
-                    <td>
-                      <span className="material-date">
-                        <CalendarDays size={14} />
-                        {formatDate(material.uploaded_at)}
-                      </span>
-                    </td>
+                    <td>{getDepartmentName(year.department_id)}</td>
 
                     <td>
-                      <div className="material-action-buttons">
-
+                      <div className="ay-actions">
                         <button
-                          className="material-icon-btn view"
-                          title="Preview PDF"
-                          onClick={() => handleView(material)}
-                        >
-                          <Eye size={17} />
-                        </button>
-
-                        <button
-                          className="material-icon-btn download"
-                          title="Download PDF"
-                          onClick={() => handleDownload(material)}
-                        >
-                          <Download size={17} />
-                        </button>
-
-                        <button
-                          className="material-icon-btn edit"
-                          title="Edit or replace PDF"
-                          onClick={() => openEditForm(material)}
+                          className="ay-icon-btn edit"
+                          title="Edit academic year"
+                          onClick={() => openEditForm(year)}
                         >
                           <Pencil size={17} />
                         </button>
 
                         <button
-                          className="material-icon-btn delete"
-                          title="Delete PDF"
-                          onClick={() => handleDelete(material)}
+                          className="ay-icon-btn delete"
+                          title="Delete academic year"
+                          onClick={() => handleDelete(year)}
                         >
                           <Trash2 size={17} />
                         </button>
-
                       </div>
                     </td>
-
                   </tr>
-
                 ))}
-
               </tbody>
             </table>
           </div>
-
         )}
-
       </section>
 
-      {/* UPLOAD / EDIT MODAL */}
-
       {showForm && (
-
         <div
-          className="material-modal-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
+          className="ay-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !saving) {
               resetForm();
             }
           }}
         >
-
-          <div className="material-modal">
-
-            <div className="material-modal-header">
-
+          <div className="ay-modal">
+            <div className="ay-modal-header">
               <div>
-                <span className="material-eyebrow">
-                  {editingMaterial
-                    ? "UPDATE MATERIAL"
-                    : "NEW MATERIAL"}
+                <span className="academic-year-eyebrow">
+                  {editingYear ? "UPDATE RECORD" : "NEW RECORD"}
                 </span>
 
                 <h2>
-                  {editingMaterial
-                    ? "Edit PDF Material"
-                    : "Upload PDF Material"}
+                  {editingYear
+                    ? "Edit Academic Year"
+                    : "Add Academic Year"}
                 </h2>
               </div>
 
               <button
-                className="material-close-btn"
+                className="ay-close-btn"
                 onClick={resetForm}
+                disabled={saving}
                 aria-label="Close form"
               >
                 <X size={21} />
               </button>
-
             </div>
 
             <form onSubmit={handleSubmit}>
+              <div className="ay-form-field">
+                <label>Department *</label>
 
-              <div className="material-field">
-                <label>PDF Title *</label>
-
-                <input
-                  type="text"
-                  placeholder="Enter PDF title"
-                  value={formData.title}
-                  onChange={(e) =>
+                <select
+                  value={formData.department_id}
+                  onChange={(event) =>
                     setFormData((previous) => ({
                       ...previous,
-                      title: e.target.value,
+                      department_id: event.target.value,
                     }))
                   }
-                  maxLength={200}
+                  disabled={Boolean(editingYear)}
+                  required
+                >
+                  <option value="">Select department</option>
+
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+
+                {editingYear && (
+                  <small>
+                    Department cannot be changed while editing.
+                  </small>
+                )}
+              </div>
+
+              <div className="ay-form-field">
+                <label>Year Number *</label>
+
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="Example: 1"
+                  value={formData.year_number}
+                  onChange={(event) =>
+                    setFormData((previous) => ({
+                      ...previous,
+                      year_number: event.target.value,
+                    }))
+                  }
                   required
                 />
               </div>
 
-              <div className="material-field">
-                <label>Description</label>
+              <div className="ay-form-field">
+                <label>Academic Year Name *</label>
 
-                <textarea
-                  placeholder="Enter a short description (optional)"
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) =>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Example: 1st Year"
+                  value={formData.name}
+                  onChange={(event) =>
                     setFormData((previous) => ({
                       ...previous,
-                      description: e.target.value,
+                      name: event.target.value,
                     }))
                   }
+                  required
                 />
               </div>
 
-              <div className="material-field">
-
-                <label>
-                  {editingMaterial
-                    ? "Replace PDF (optional)"
-                    : "Choose PDF *"}
-                </label>
-
-                <label className="material-file-drop">
-
-                  <Upload size={25} />
-
-                  <strong>
-                    {selectedFileName ||
-                      "Click to choose a PDF"}
-                  </strong>
-
-                  <span>
-                    PDF only · Maximum size 20 MB
-                  </span>
-
-                  <input
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    onChange={handleFileChange}
-                    required={!editingMaterial}
-                  />
-
-                </label>
-
-                {editingMaterial && (
-                  <p className="material-current-file">
-                    Current file: {editingMaterial.file_name}
-                  </p>
-                )}
-
-              </div>
-
-              <div className="material-modal-actions">
-
+              <div className="ay-modal-actions">
                 <button
                   type="button"
-                  className="material-secondary-btn"
+                  className="ay-secondary-btn"
                   onClick={resetForm}
-                  disabled={loading}
+                  disabled={saving}
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="material-primary-btn"
-                  disabled={loading}
+                  className="ay-primary-btn"
+                  disabled={saving}
                 >
-                  {loading ? (
+                  {saving ? (
                     <>
-                      <RefreshCw className="spin" size={17} />
+                      <RefreshCw size={17} className="ay-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Upload size={17} />
-
-                      {editingMaterial
-                        ? "Save Changes"
-                        : "Upload PDF"}
+                      <Plus size={17} />
+                      {editingYear ? "Save Changes" : "Create Academic Year"}
                     </>
                   )}
                 </button>
-
               </div>
-
             </form>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
-export default MaterialManagement;
+export default AcademicYearManagement;
