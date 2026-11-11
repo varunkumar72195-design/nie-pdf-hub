@@ -12,6 +12,7 @@ from fastapi import (
     Form,
     HTTPException,
     Query,
+    Request,
     UploadFile,
     status,
 )
@@ -22,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_admin
 from app.models.admin import Admin
+from app.models.analytics import AnalyticsEvent
 from app.models.material import Material
 from app.models.subject import Subject
 from app.models.semester import Semester
@@ -184,14 +186,15 @@ def is_cloud_storage_path(file_path: str) -> bool:
 
 def remove_stored_file(file_path: str):
     if not is_cloud_storage_path(file_path):
-        logger.error("Refusing to delete invalid cloud path: %s", file_path)
+        logger.error(
+            "Refusing to delete invalid cloud path: %s",
+            file_path
+        )
         return
 
     try:
         delete_file(file_path)
     except Exception:
-        # The database change has already succeeded. Log cleanup failure
-        # so it can be handled without losing the database operation.
         logger.exception(
             "Could not delete Supabase object: %s",
             file_path
@@ -224,6 +227,56 @@ def get_file_content(material: Material):
         raise HTTPException(
             status_code=404,
             detail="Stored file could not be retrieved from cloud storage"
+        )
+
+
+# --------------------------------------------------
+# HELPER: RECORD PDF ANALYTICS
+# --------------------------------------------------
+
+def record_pdf_analytics(
+    db: Session,
+    request: Request,
+    material: Material,
+    event_type: str
+):
+    # Only count actual PDF files.
+    extension = PurePosixPath(
+        material.file_name or ""
+    ).suffix.lower()
+
+    if extension != ".pdf":
+        return
+
+    visitor_id = request.headers.get("X-Visitor-ID")
+    session_id = request.headers.get("X-Session-ID")
+
+    try:
+        visitor_id = str(uuid.UUID(visitor_id))
+        session_id = str(uuid.UUID(session_id))
+
+        event = AnalyticsEvent(
+            event_type=event_type,
+            visitor_id=visitor_id,
+            session_id=session_id,
+            page_path=f"/materials/{material.id}",
+            material_id=material.id
+        )
+
+        db.add(event)
+        db.commit()
+
+    except (ValueError, TypeError, AttributeError):
+        logger.warning(
+            "PDF analytics skipped: invalid visitor/session ID"
+        )
+
+    except Exception:
+        db.rollback()
+        logger.exception(
+            "Could not record %s analytics for material %s",
+            event_type,
+            material.id
         )
 
 
@@ -299,7 +352,6 @@ async def upload_material(
             extension
         )
 
-        # Upload to private Supabase Storage.
         upload_file(
             storage_path,
             file_bytes,
@@ -405,6 +457,7 @@ def get_subject_materials(
 @router.get("/materials/{material_id}/view")
 def view_material(
     material_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
 
@@ -419,6 +472,15 @@ def view_material(
     )
 
     file_bytes = get_file_content(material)
+
+    # Record only after successful file retrieval.
+    record_pdf_analytics(
+        db,
+        request,
+        material,
+        "pdf_view"
+    )
+
     encoded_name = quote(material.file_name)
 
     return Response(
@@ -441,6 +503,7 @@ def view_material(
 @router.get("/materials/{material_id}/download")
 def download_material(
     material_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
 
@@ -455,6 +518,15 @@ def download_material(
     )
 
     file_bytes = get_file_content(material)
+
+    # Record after successful file retrieval.
+    record_pdf_analytics(
+        db,
+        request,
+        material,
+        "pdf_download"
+    )
+
     encoded_name = quote(material.file_name)
 
     return Response(
@@ -537,7 +609,6 @@ async def update_material(
         db.commit()
         db.refresh(material)
 
-        # Remove the previous file only after DB commit succeeds.
         if new_storage_path:
             remove_stored_file(old_file_path)
 
@@ -600,7 +671,6 @@ def delete_material(
         db.rollback()
         raise
 
-    # Remove the stored object after successful DB deletion.
     remove_stored_file(old_file_path)
 
     return None
