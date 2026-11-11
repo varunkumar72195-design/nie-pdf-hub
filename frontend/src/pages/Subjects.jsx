@@ -3,12 +3,16 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
+  ArrowLeft,
   ArrowRight,
   BookOpen,
   Search,
   RefreshCw,
   AlertCircle,
   BookMarked,
+  Building2,
+  GraduationCap,
+  Layers,
 } from "lucide-react";
 
 import StudentNavbar from "../components/StudentNavbar";
@@ -20,8 +24,92 @@ function Subjects() {
 
   const [subjects, setSubjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [departmentName, setDepartmentName] = useState("");
+  const [academicYearName, setAcademicYearName] = useState("");
+  const [semesterName, setSemesterName] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // FETCH DEPARTMENT, YEAR AND SEMESTER DETAILS
+  useEffect(() => {
+    let active = true;
+
+    const fetchContext = async () => {
+      try {
+        const [
+          departmentsResponse,
+          yearsResponse,
+          semestersResponse,
+        ] = await Promise.all([
+          API.get("/departments/"),
+          API.get(`/departments/${departmentId}/years`),
+          API.get(`/academic-years/${yearId}/semesters`),
+        ]);
+
+        if (!active) return;
+
+        const departments = Array.isArray(departmentsResponse.data)
+          ? departmentsResponse.data
+          : [];
+
+        const years = Array.isArray(yearsResponse.data)
+          ? yearsResponse.data
+          : [];
+
+        const semesters = Array.isArray(semestersResponse.data)
+          ? semestersResponse.data
+          : [];
+
+        const department = departments.find(
+          (item) => String(item.id) === String(departmentId)
+        );
+
+        const academicYear = years.find(
+          (item) => String(item.id) === String(yearId)
+        );
+
+        const semester = semesters.find(
+          (item) => String(item.id) === String(semesterId)
+        );
+
+        setDepartmentName(
+          department?.name || `Department ${departmentId}`
+        );
+
+        setAcademicYearName(
+          academicYear?.name ||
+          (academicYear?.year_number
+            ? `Year ${academicYear.year_number}`
+            : `Academic Year ${yearId}`)
+        );
+
+        setSemesterName(
+          semester?.name ||
+          (semester?.semester_number
+            ? `Semester ${semester.semester_number}`
+            : `Semester ${semesterId}`)
+        );
+      } catch (err) {
+        console.error("Subject page context error:", err);
+
+        if (active) {
+          setDepartmentName(`Department ${departmentId}`);
+          setAcademicYearName(`Academic Year ${yearId}`);
+          setSemesterName(`Semester ${semesterId}`);
+        }
+      }
+    };
+
+    if (departmentId && yearId && semesterId) {
+      fetchContext();
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [departmentId, yearId, semesterId]);
 
   // FETCH SUBJECTS
   const fetchSubjects = useCallback(async () => {
@@ -42,7 +130,6 @@ function Subjects() {
       }
 
       setSubjects(response.data);
-
     } catch (err) {
       console.error("Subjects API Error:", {
         message: err.message,
@@ -66,7 +153,6 @@ function Subjects() {
           err.message || "Unable to connect to the server."
         );
       }
-
     } finally {
       setLoading(false);
     }
@@ -78,7 +164,7 @@ function Subjects() {
 
   // SEARCH FILTER
   const filteredSubjects = subjects.filter((subject) => {
-    const search = searchTerm.toLowerCase();
+    const search = searchTerm.toLowerCase().trim();
 
     return (
       (subject.name || "").toLowerCase().includes(search) ||
@@ -89,7 +175,6 @@ function Subjects() {
 
   return (
     <div className="subjects-page">
-
       {/* SHARED STUDENT NAVBAR */}
       <StudentNavbar />
 
@@ -107,6 +192,71 @@ function Subjects() {
       {/* MAIN CONTENT */}
       <main className="subjects-content">
 
+        {/* BACK BUTTON */}
+        <div className="subjects-navigation">
+          <Link
+            to={`/departments/${departmentId}/years/${yearId}/semesters`}
+            className="subjects-back-button"
+          >
+            <ArrowLeft size={18} />
+            Back to Semesters
+          </Link>
+        </div>
+
+        {/* BREADCRUMB */}
+        <nav className="subjects-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/departments">Departments</Link>
+
+          <span>/</span>
+
+          <Link to={`/departments/${departmentId}/years`}>
+            Academic Years
+          </Link>
+
+          <span>/</span>
+
+          <Link
+            to={`/departments/${departmentId}/years/${yearId}/semesters`}
+          >
+            Semesters
+          </Link>
+
+          <span>/</span>
+
+          <span className="subjects-breadcrumb-current">
+            Subjects
+          </span>
+        </nav>
+
+        {/* CURRENT LOCATION */}
+        <div className="subjects-context">
+          <div className="subjects-context-item">
+            <Building2 size={17} />
+            <span>
+              {departmentName || `Department ${departmentId}`}
+            </span>
+          </div>
+
+          <span className="subjects-context-divider">/</span>
+
+          <div className="subjects-context-item">
+            <GraduationCap size={18} />
+            <span>
+              {academicYearName || `Academic Year ${yearId}`}
+            </span>
+          </div>
+
+          <span className="subjects-context-divider">/</span>
+
+          <div className="subjects-context-item">
+            <Layers size={17} />
+            <span>
+              {semesterName || `Semester ${semesterId}`}
+            </span>
+          </div>
+        </div>
+
+        {/* PAGE HEADING */}
         <div className="subjects-heading">
           <div>
             <h2>Available Subjects</h2>
@@ -180,6 +330,7 @@ function Subjects() {
               className="subject-action"
             >
               Back to Semesters
+              <ArrowRight size={17} />
             </Link>
           </div>
         )}
@@ -203,7 +354,6 @@ function Subjects() {
         {/* SUBJECT CARDS */}
         {!loading && !error && filteredSubjects.length > 0 && (
           <div className="subjects-grid">
-
             {filteredSubjects.map((subject) => (
               <Link
                 to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects/${subject.id}/materials`}
@@ -211,15 +361,13 @@ function Subjects() {
                 key={subject.id}
               >
                 <div className="subject-card-top">
-
                   <div className="subject-icon">
                     <BookOpen size={27} />
                   </div>
 
                   <span className="subject-code">
-                    {subject.code}
+                    {subject.code || "SUBJECT"}
                   </span>
-
                 </div>
 
                 <h3>{subject.name}</h3>
@@ -233,20 +381,16 @@ function Subjects() {
                   View Materials
                   <ArrowRight size={17} />
                 </div>
-
               </Link>
             ))}
-
           </div>
         )}
-
       </main>
 
       {/* FOOTER */}
       <footer className="subjects-footer">
         NIE PDF HUB · Academic Resources
       </footer>
-
     </div>
   );
 }

@@ -5,11 +5,14 @@ import { Link, useParams } from "react-router-dom";
 import StudentNavbar from "../components/StudentNavbar";
 
 import {
+  ArrowLeft,
   ArrowRight,
   BookOpen,
   Layers,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  GraduationCap,
+  Building2,
 } from "lucide-react";
 
 import API from "../services/api";
@@ -19,8 +22,70 @@ function Semesters() {
   const { departmentId, yearId } = useParams();
 
   const [semesters, setSemesters] = useState([]);
+  const [departmentName, setDepartmentName] = useState("");
+  const [academicYearName, setAcademicYearName] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // FETCH DEPARTMENT AND ACADEMIC YEAR DETAILS
+  useEffect(() => {
+    let active = true;
+
+    const fetchContext = async () => {
+      try {
+        const [departmentsResponse, yearsResponse] =
+          await Promise.all([
+            API.get("/departments/"),
+            API.get(`/departments/${departmentId}/years`),
+          ]);
+
+        if (!active) return;
+
+        const departments = Array.isArray(departmentsResponse.data)
+          ? departmentsResponse.data
+          : [];
+
+        const years = Array.isArray(yearsResponse.data)
+          ? yearsResponse.data
+          : [];
+
+        const department = departments.find(
+          (item) => String(item.id) === String(departmentId)
+        );
+
+        const academicYear = years.find(
+          (item) => String(item.id) === String(yearId)
+        );
+
+        setDepartmentName(
+          department?.name || `Department ${departmentId}`
+        );
+
+        setAcademicYearName(
+          academicYear?.name ||
+          (academicYear?.year_number
+            ? `Year ${academicYear.year_number}`
+            : `Academic Year ${yearId}`)
+        );
+      } catch (err) {
+        console.error("Academic context error:", err);
+
+        if (active) {
+          setDepartmentName(`Department ${departmentId}`);
+          setAcademicYearName(`Academic Year ${yearId}`);
+        }
+      }
+    };
+
+    if (departmentId && yearId) {
+      fetchContext();
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [departmentId, yearId]);
 
   // FETCH SEMESTERS
   const fetchSemesters = useCallback(async () => {
@@ -41,7 +106,6 @@ function Semesters() {
       }
 
       setSemesters(response.data);
-
     } catch (err) {
       console.error("Semesters API Error:", err);
 
@@ -60,7 +124,6 @@ function Semesters() {
           err.message || "Unable to connect to the server."
         );
       }
-
     } finally {
       setLoading(false);
     }
@@ -72,16 +135,12 @@ function Semesters() {
 
   return (
     <div className="semesters-page">
-
-      {/* SHARED STUDENT NAVBAR */}
       <StudentNavbar />
 
       {/* HERO */}
       <header className="semesters-hero">
         <span>ACADEMIC RESOURCES</span>
-
         <h1>Select Semester</h1>
-
         <p>
           Choose your semester to explore subjects and study materials.
         </p>
@@ -90,10 +149,58 @@ function Semesters() {
       {/* MAIN CONTENT */}
       <main className="semesters-content">
 
+        {/* BACK BUTTON */}
+        <div className="semester-navigation">
+          <Link
+            to={`/departments/${departmentId}/years`}
+            className="semester-back-button"
+          >
+            <ArrowLeft size={18} />
+            Back to Academic Years
+          </Link>
+        </div>
+
+        {/* BREADCRUMB */}
+        <nav className="semester-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/departments">Departments</Link>
+
+          <span>/</span>
+
+          <Link to={`/departments/${departmentId}/years`}>
+            Academic Years
+          </Link>
+
+          <span>/</span>
+
+          <span className="breadcrumb-current">Semesters</span>
+        </nav>
+
+        {/* CURRENT LOCATION */}
+        <div className="semester-context">
+          <div className="context-item">
+            <Building2 size={17} />
+            <span>{departmentName || `Department ${departmentId}`}</span>
+          </div>
+
+          <div className="context-divider">/</div>
+
+          <div className="context-item">
+            <GraduationCap size={18} />
+            <span>
+              {academicYearName || `Academic Year ${yearId}`}
+            </span>
+          </div>
+        </div>
+
+        {/* PAGE HEADING */}
         <div className="semesters-heading">
           <div>
             <h2>Available Semesters</h2>
-            <p>Select a semester below.</p>
+            <p>
+              {semesters.length > 0
+                ? `${semesters.length} semester${semesters.length > 1 ? "s" : ""} available`
+                : "Select a semester below."}
+            </p>
           </div>
 
           <Layers size={30} />
@@ -102,7 +209,7 @@ function Semesters() {
         {/* LOADING */}
         {loading && (
           <div className="semesters-status">
-            <RefreshCw size={20} className="loading-icon" />
+            <RefreshCw size={22} className="loading-icon" />
             <p>Loading semesters...</p>
           </div>
         )}
@@ -110,8 +217,7 @@ function Semesters() {
         {/* ERROR */}
         {!loading && error && (
           <div className="semesters-status error">
-            <AlertCircle size={24} />
-
+            <AlertCircle size={25} />
             <p>{error}</p>
 
             <button onClick={fetchSemesters}>
@@ -124,7 +230,7 @@ function Semesters() {
         {/* EMPTY STATE */}
         {!loading && !error && semesters.length === 0 && (
           <div className="semesters-status">
-            <BookOpen size={30} />
+            <BookOpen size={32} />
 
             <h3>No Semesters Found</h3>
 
@@ -137,6 +243,7 @@ function Semesters() {
               className="semester-action"
             >
               Back to Academic Years
+              <ArrowRight size={17} />
             </Link>
           </div>
         )}
@@ -144,7 +251,6 @@ function Semesters() {
         {/* SEMESTER CARDS */}
         {!loading && !error && semesters.length > 0 && (
           <div className="semesters-grid">
-
             {semesters.map((semester) => (
               <Link
                 to={`/departments/${departmentId}/years/${yearId}/semesters/${semester.id}/subjects`}
@@ -152,7 +258,7 @@ function Semesters() {
                 key={semester.id}
               >
                 <div className="semester-icon">
-                  <BookOpen size={30} />
+                  <BookOpen size={25} />
                 </div>
 
                 <span className="semester-number">
@@ -171,17 +277,14 @@ function Semesters() {
                 </div>
               </Link>
             ))}
-
           </div>
         )}
-
       </main>
 
       {/* FOOTER */}
       <footer className="semesters-footer">
         NIE PDF HUB · Academic Resources
       </footer>
-
     </div>
   );
 }

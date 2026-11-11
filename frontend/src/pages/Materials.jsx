@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 
 import {
   ArrowDownToLine,
+  ArrowLeft,
   ArrowRight,
   BookOpen,
   FileText,
@@ -11,6 +12,10 @@ import {
   Search,
   AlertCircle,
   CalendarDays,
+  Building2,
+  GraduationCap,
+  Layers,
+  BookMarked,
 } from "lucide-react";
 
 import StudentNavbar from "../components/StudentNavbar";
@@ -29,6 +34,94 @@ function Materials() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [departmentName, setDepartmentName] = useState("");
+  const [academicYearName, setAcademicYearName] = useState("");
+  const [semesterName, setSemesterName] = useState("");
+  const [subjectName, setSubjectName] = useState("");
+
+  // FETCH CURRENT LOCATION DETAILS
+  useEffect(() => {
+    let active = true;
+
+    const fetchContext = async () => {
+      try {
+        const [
+          departmentsResponse,
+          yearsResponse,
+          semestersResponse,
+          subjectsResponse,
+        ] = await Promise.all([
+          API.get("/departments/"),
+          API.get(`/departments/${departmentId}/years`),
+          API.get(`/academic-years/${yearId}/semesters`),
+          API.get(`/semesters/${semesterId}/subjects`),
+        ]);
+
+        if (!active) return;
+
+        const departments = departmentsResponse.data || [];
+        const years = yearsResponse.data || [];
+        const semesters = semestersResponse.data || [];
+        const subjects = subjectsResponse.data || [];
+
+        const department = departments.find(
+          (item) => String(item.id) === String(departmentId)
+        );
+
+        const year = years.find(
+          (item) => String(item.id) === String(yearId)
+        );
+
+        const semester = semesters.find(
+          (item) => String(item.id) === String(semesterId)
+        );
+
+        const subject = subjects.find(
+          (item) => String(item.id) === String(subjectId)
+        );
+
+        setDepartmentName(
+          department?.name || `Department ${departmentId}`
+        );
+
+        setAcademicYearName(
+          year?.name ||
+          (year?.year_number
+            ? `Year ${year.year_number}`
+            : `Academic Year ${yearId}`)
+        );
+
+        setSemesterName(
+          semester?.name ||
+          (semester?.semester_number
+            ? `Semester ${semester.semester_number}`
+            : `Semester ${semesterId}`)
+        );
+
+        setSubjectName(
+          subject?.name || `Subject ${subjectId}`
+        );
+      } catch (err) {
+        console.error("Materials context error:", err);
+
+        if (active) {
+          setDepartmentName(`Department ${departmentId}`);
+          setAcademicYearName(`Academic Year ${yearId}`);
+          setSemesterName(`Semester ${semesterId}`);
+          setSubjectName(`Subject ${subjectId}`);
+        }
+      }
+    };
+
+    if (departmentId && yearId && semesterId && subjectId) {
+      fetchContext();
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [departmentId, yearId, semesterId, subjectId]);
 
   // FETCH MATERIALS
   const fetchMaterials = useCallback(async () => {
@@ -49,7 +142,6 @@ function Materials() {
       }
 
       setMaterials(response.data);
-
     } catch (err) {
       console.error("Materials API Error:", {
         message: err.message,
@@ -73,7 +165,6 @@ function Materials() {
           err.message || "Unable to connect to the server."
         );
       }
-
     } finally {
       setLoading(false);
     }
@@ -140,7 +231,6 @@ function Materials() {
   return (
     <div className="materials-page">
 
-      {/* SHARED STUDENT NAVBAR */}
       <StudentNavbar />
 
       {/* HERO */}
@@ -157,6 +247,74 @@ function Materials() {
       {/* MAIN CONTENT */}
       <main className="materials-content">
 
+        {/* BACK BUTTON */}
+        <div className="materials-navigation">
+          <Link
+            to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects`}
+            className="materials-back-button"
+          >
+            <ArrowLeft size={18} />
+            Back to Subjects
+          </Link>
+        </div>
+
+        {/* BREADCRUMB */}
+        <nav className="materials-breadcrumb" aria-label="Breadcrumb">
+
+          <Link to="/departments">Departments</Link>
+          <span>/</span>
+
+          <Link to={`/departments/${departmentId}/years`}>
+            Academic Years
+          </Link>
+          <span>/</span>
+
+          <Link
+            to={`/departments/${departmentId}/years/${yearId}/semesters`}
+          >
+            Semesters
+          </Link>
+          <span>/</span>
+
+          <Link
+            to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects`}
+          >
+            Subjects
+          </Link>
+          <span>/</span>
+
+          <span className="materials-breadcrumb-current">
+            Materials
+          </span>
+
+        </nav>
+
+        {/* CURRENT LOCATION */}
+        <div className="materials-context">
+
+          <div className="materials-context-item">
+            <Building2 size={17} />
+            <span>{departmentName || `Department ${departmentId}`}</span>
+          </div>
+
+          <div className="materials-context-item">
+            <GraduationCap size={18} />
+            <span>{academicYearName || `Academic Year ${yearId}`}</span>
+          </div>
+
+          <div className="materials-context-item">
+            <Layers size={17} />
+            <span>{semesterName || `Semester ${semesterId}`}</span>
+          </div>
+
+          <div className="materials-context-item">
+            <BookMarked size={17} />
+            <span>{subjectName || `Subject ${subjectId}`}</span>
+          </div>
+
+        </div>
+
+        {/* HEADING */}
         <div className="materials-heading">
           <div>
             <h2>Available PDF Materials</h2>
@@ -229,6 +387,7 @@ function Materials() {
               to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects`}
               className="material-view-button"
             >
+              <ArrowLeft size={16} />
               Back to Subjects
             </Link>
           </div>
@@ -257,7 +416,7 @@ function Materials() {
 
                 <div className="material-card-top">
                   <div className="material-file-icon">
-                    <FileText size={29} />
+                    <FileText size={27} />
                   </div>
 
                   <span className="material-pdf-label">
