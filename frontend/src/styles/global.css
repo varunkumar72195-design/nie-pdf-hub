@@ -1,6 +1,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+/* ================================
+   GLOBAL RESET
+================================ */
+
 * {
   margin: 0;
   padding: 0;
@@ -8,13 +12,27 @@
 }
 
 html {
+  width: 100%;
+  min-width: 320px;
   scroll-behavior: smooth;
 }
 
 body {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100vh;
   font-family: 'Inter', sans-serif;
   color: #172033;
   background: #ffffff;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 a {
@@ -22,7 +40,19 @@ a {
   color: inherit;
 }
 
+img,
+svg,
+video,
+iframe {
+  max-width: 100%;
+}
+
+/* ================================
+   NAVBAR
+================================ */
+
 .navbar {
+  width: 100%;
   height: 76px;
   padding: 0 8%;
   display: flex;
@@ -60,7 +90,12 @@ a {
   border-radius: 8px;
 }
 
+/* ================================
+   HERO SECTION
+================================ */
+
 .hero {
+  width: 100%;
   min-height: 570px;
   padding: 80px 10%;
   display: flex;
@@ -71,7 +106,9 @@ a {
 }
 
 .hero-content {
+  width: 100%;
   max-width: 600px;
+  min-width: 0;
 }
 
 .hero-tag,
@@ -117,8 +154,10 @@ a {
 }
 
 .search-box {
+  width: 100%;
   margin-top: 35px;
   max-width: 460px;
+  min-width: 0;
   height: 58px;
   display: flex;
   align-items: center;
@@ -131,6 +170,7 @@ a {
 }
 
 .search-box input {
+  width: 100%;
   border: none;
   outline: none;
   flex: 1;
@@ -145,12 +185,15 @@ a {
 
 .hero-illustration {
   width: 340px;
+  max-width: 100%;
+  min-width: 0;
   display: flex;
   justify-content: center;
 }
 
 .document-card {
   width: 280px;
+  max-width: 100%;
   padding: 35px;
   background: white;
   border-radius: 20px;
@@ -195,7 +238,12 @@ a {
   margin-top: 25px;
 }
 
+/* ================================
+   FEATURES SECTION
+================================ */
+
 .features {
+  width: 100%;
   padding: 90px 10%;
 }
 
@@ -214,12 +262,14 @@ a {
 }
 
 .feature-grid {
+  width: 100%;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 25px;
 }
 
 .feature-card {
+  min-width: 0;
   padding: 30px;
   border: 1px solid #e6ebf2;
   border-radius: 15px;
@@ -263,7 +313,12 @@ a {
   margin-top: 22px;
 }
 
+/* ================================
+   ABOUT SECTION
+================================ */
+
 .about {
+  width: 100%;
   background: #f0f5ff;
   padding: 65px 10%;
   text-align: center;
@@ -280,7 +335,12 @@ a {
   line-height: 1.8;
 }
 
+/* ================================
+   FOOTER
+================================ */
+
 .footer {
+  width: 100%;
   background: #14213d;
   color: #cbd5e1;
   padding: 25px 8%;
@@ -290,56 +350,18 @@ a {
   font-size: 12px;
 }
 
-@media (max-width: 768px) {
-  .navbar {
-    padding: 0 5%;
-  }
-
-  .nav-links {
-    gap: 12px;
-    font-size: 12px;
-  }
-
-  .nav-links a:nth-child(2),
-  .nav-links a:nth-child(3) {
-    display: none;
-  }
-
-  .hero {
-    padding: 60px 7%;
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .hero-illustration {
-    width: 100%;
-  }
-
-  .search-box {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .feature-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .section-heading h2 {
-    font-size: 25px;
-  }
-
-  .footer {
-    flex-direction: column;
-    text-align: center;
-  }
-}
+/* ================================
+   DEPARTMENTS PAGE
+================================ */
 
 .departments-page {
+  width: 100%;
   min-height: 100vh;
   background: #f8faff;
 }
 
 .departments-header {
+  width: 100%;
   padding: 65px 10% 45px;
   background: #edf3ff;
 }
@@ -361,16 +383,19 @@ a {
 }
 
 .department-container {
+  width: 100%;
   padding: 55px 10%;
 }
 
 .department-grid {
+  width: 100%;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 25px;
 }
 
 .department-card {
+  min-width: 0;
   padding: 28px;
   background: white;
   border: 1px solid #e5eaf2;
@@ -421,6 +446,10 @@ a {
   font-weight: 700;
 }
 
+/* ================================
+   STATUS AND ERROR MESSAGES
+================================ */
+
 .status-message,
 .error-message {
   text-align: center;
@@ -444,12 +473,180 @@ a {
   cursor: pointer;
 }
 
-@media (max-width: 768px) {
+/* ================================
+   GLOBAL RESPONSIVE PROTECTION
+================================ */
+
+html,
+body,
+#root {
+  max-width: 100%;
+}
+
+#root,
+#root > * {
+  min-width: 0;
+}
+
+.hero,
+.hero-content,
+.features,
+.feature-grid,
+.feature-card,
+.departments-page,
+.departments-header,
+.department-container,
+.department-grid,
+.department-card,
+.footer {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ================================
+   TABLET RESPONSIVE
+================================ */
+
+@media (max-width: 900px) {
+  .hero {
+    gap: 30px;
+  }
+
+  .feature-grid,
   .department-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ================================
+   MOBILE RESPONSIVE
+================================ */
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 5%;
+  }
+
+  .nav-links {
+    gap: 12px;
+    font-size: 12px;
+  }
+
+  .nav-links a:nth-child(2),
+  .nav-links a:nth-child(3) {
+    display: none;
+  }
+
+  .hero {
+    padding: 60px 7%;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .hero-content {
+    width: 100%;
+  }
+
+  .hero-illustration {
+    width: 100%;
+  }
+
+  .search-box {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .feature-grid,
+  .department-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .section-heading h2 {
+    font-size: 25px;
+  }
+
+  .footer {
+    flex-direction: column;
+    text-align: center;
   }
 
   .departments-header h1 {
     font-size: 29px;
+  }
+}
+
+/* ================================
+   SMALL MOBILE RESPONSIVE
+================================ */
+
+@media (max-width: 650px) {
+  .hero {
+    padding: 45px 6%;
+    gap: 35px;
+  }
+
+  .hero-content {
+    width: 100%;
+  }
+
+  .hero-illustration {
+    width: 100%;
+    max-width: 340px;
+    margin: auto;
+  }
+
+  .document-card {
+    width: min(280px, 100%);
+    padding: 28px;
+  }
+
+  .features,
+  .department-container {
+    padding: 50px 6%;
+  }
+
+  .departments-header {
+    padding: 45px 6% 35px;
+  }
+
+  .about {
+    padding: 50px 6%;
+  }
+
+  .footer {
+    padding: 25px 6%;
+  }
+
+  .feature-grid,
+  .department-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .feature-card,
+  .department-card {
+    width: 100%;
+  }
+}
+
+/* ================================
+   EXTRA SMALL MOBILE
+================================ */
+
+@media (max-width: 380px) {
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .document-card {
+    padding: 22px;
+  }
+
+  .section-heading h2 {
+    font-size: 22px;
+  }
+
+  .departments-header h1 {
+    font-size: 26px;
   }
 }

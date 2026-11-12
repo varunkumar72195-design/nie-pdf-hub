@@ -1,5 +1,7 @@
+
 from app.models.admin import Admin
 from app.models.department import Department
+from app.models.regulation import Regulation
 from app.models.academic_year import AcademicYear
 from app.models.semester import Semester
 from app.models.subject import Subject

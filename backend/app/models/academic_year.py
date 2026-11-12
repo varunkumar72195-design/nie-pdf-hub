@@ -24,6 +24,12 @@ class AcademicYear(Base):
         nullable=False
     )
 
+    regulation_id = Column(
+        Integer,
+        ForeignKey("regulations.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
     year_number = Column(Integer, nullable=False)
     name = Column(String(50), nullable=False)
 
@@ -36,13 +42,19 @@ class AcademicYear(Base):
     __table_args__ = (
         UniqueConstraint(
             "department_id",
+            "regulation_id",
             "year_number",
-            name="uq_department_year"
+            name="uq_department_regulation_year"
         ),
     )
 
     department = relationship(
         "Department",
+        back_populates="academic_years"
+    )
+
+    regulation = relationship(
+        "Regulation",
         back_populates="academic_years"
     )
 

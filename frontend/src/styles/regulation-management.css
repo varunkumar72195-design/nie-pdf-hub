@@ -1,0 +1,722 @@
+
+/* =========================================
+   REGULATION MANAGEMENT
+========================================= */
+
+.regulation-management-page {
+  width: 100%;
+  min-height: 100%;
+  color: #172033;
+  animation: regulationFadeIn 0.3s ease;
+}
+
+@keyframes regulationFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* HEADER */
+
+.regulation-management-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 12px 0 22px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #e8edf4;
+}
+
+.regulation-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.regulation-back:hover {
+  color: #2563eb;
+}
+
+.regulation-management-header h2 {
+  margin: 0;
+  color: #172033;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.regulation-management-header span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* MAIN CONTAINER */
+
+.regulation-management-container {
+  width: 100%;
+  max-width: 1450px;
+  margin: auto;
+  padding: 0 0 35px;
+}
+
+/* PAGE HEADING */
+
+.regulation-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 27px;
+}
+
+.regulation-eyebrow {
+  margin: 0 0 9px;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.regulation-page-heading h1 {
+  margin: 0 0 8px;
+  color: #172033;
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+
+.regulation-page-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ADD BUTTON */
+
+.add-regulation-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 19px;
+  border: none;
+  border-radius: 9px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+  transition: 0.2s;
+}
+
+.add-regulation-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 7px 15px rgba(37, 99, 235, 0.2);
+}
+
+/* SUCCESS AND ERROR */
+
+.regulation-success,
+.regulation-error {
+  padding: 13px 16px;
+  margin-bottom: 19px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.regulation-success {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.regulation-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+/* COMMON CARDS */
+
+.regulation-form-card,
+.regulation-list-card {
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #e8edf4;
+  border-radius: 13px;
+  background: #ffffff;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.035);
+}
+
+/* FORM HEADING */
+
+.regulation-form-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 23px;
+}
+
+.regulation-form-heading h2 {
+  margin: 0 0 6px;
+  color: #172033;
+  font-size: 19px;
+  font-weight: 750;
+}
+
+.regulation-form-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.regulation-form-heading button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.regulation-form-heading button:hover {
+  background: #e2e8f0;
+  color: #dc2626;
+}
+
+/* FORM GRID */
+
+.regulation-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.regulation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.regulation-field label {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.regulation-field input,
+.regulation-field select,
+.regulation-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 13px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #172033;
+  font-family: inherit;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.regulation-field input::placeholder,
+.regulation-field textarea::placeholder {
+  color: #94a3b8;
+}
+
+.regulation-field input:focus,
+.regulation-field select:focus,
+.regulation-field textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.09);
+}
+
+.regulation-field input:disabled,
+.regulation-field select:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.regulation-field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.regulation-field small {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.regulation-field.full-width {
+  grid-column: 1 / -1;
+}
+
+/* FORM ACTIONS */
+
+.regulation-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 11px;
+  margin-top: 23px;
+  padding-top: 18px;
+  border-top: 1px solid #edf1f6;
+}
+
+.cancel-regulation-button,
+.save-regulation-button {
+  min-width: 120px;
+  padding: 11px 17px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.cancel-regulation-button {
+  border: 1px solid #dbe3ee;
+  background: #ffffff;
+  color: #475569;
+}
+
+.cancel-regulation-button:hover {
+  background: #f8fafc;
+}
+
+.save-regulation-button {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.save-regulation-button:hover {
+  background: #1d4ed8;
+}
+
+.save-regulation-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* LIST HEADING */
+
+.regulation-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 21px;
+}
+
+.regulation-list-heading h2 {
+  margin: 0 0 6px;
+  color: #172033;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.regulation-list-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* REFRESH BUTTON */
+
+.refresh-regulations {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.refresh-regulations:hover {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.refresh-regulations:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* SEARCH AND FILTER */
+
+.regulation-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 13px;
+  margin-bottom: 23px;
+}
+
+.regulation-search,
+.regulation-department-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #94a3b8;
+  transition: 0.2s;
+}
+
+.regulation-search:focus-within,
+.regulation-department-filter:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.07);
+}
+
+.regulation-search input,
+.regulation-department-filter select {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #334155;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.regulation-department-filter select {
+  cursor: pointer;
+}
+
+/* REGULATION GRID */
+
+.regulation-management-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* REGULATION CARD */
+
+.regulation-management-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e8edf4;
+  border-radius: 12px;
+  background: #ffffff;
+  transition: 0.22s ease;
+}
+
+.regulation-management-card:hover {
+  border-color: #bfdbfe;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+  transform: translateY(-3px);
+}
+
+.regulation-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+
+.regulation-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.regulation-code {
+  padding: 6px 11px;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.regulation-management-card h3 {
+  margin: 0 0 11px;
+  color: #172033;
+  font-size: 16px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+/* DEPARTMENT NAME */
+
+.regulation-department-name {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.regulation-department-name svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #2563eb;
+}
+
+/* DESCRIPTION */
+
+.regulation-description {
+  min-height: 40px;
+  margin: 0 0 17px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+/* CARD ACTIONS */
+
+.regulation-card-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid #edf1f6;
+}
+
+.edit-regulation-button,
+.delete-regulation-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.edit-regulation-button {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.edit-regulation-button:hover {
+  background: #dbeafe;
+}
+
+.delete-regulation-button {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.delete-regulation-button:hover {
+  background: #fee2e2;
+}
+
+/* EMPTY AND LOADING STATES */
+
+.regulation-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 190px;
+  padding: 30px 15px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.regulation-empty h3 {
+  margin: 0;
+  color: #334155;
+  font-size: 16px;
+}
+
+.regulation-empty p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 1100px) {
+  .regulation-management-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .regulation-management-container {
+    padding-bottom: 25px;
+  }
+
+  .regulation-page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .regulation-page-heading h1 {
+    font-size: 25px;
+  }
+
+  .regulation-form-card,
+  .regulation-list-card {
+    padding: 18px;
+  }
+
+  .regulation-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .regulation-management-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .regulation-management-header {
+    gap: 10px;
+  }
+
+  .regulation-management-header h2 {
+    font-size: 16px;
+  }
+
+  .regulation-management-header span {
+    width: 100%;
+    padding-left: 2px;
+  }
+
+  .regulation-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .regulation-field.full-width {
+    grid-column: auto;
+  }
+
+  .regulation-management-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .regulation-list-heading {
+    align-items: flex-start;
+  }
+
+  .regulation-card-actions {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 380px) {
+  .regulation-form-actions {
+    flex-direction: column;
+  }
+
+  .cancel-regulation-button,
+  .save-regulation-button {
+    width: 100%;
+  }
+
+  .regulation-form-card,
+  .regulation-list-card {
+    padding: 14px;
+  }
+}
+
+/* FIX: REGULATION PAGE LEFT AND RIGHT SPACING */
+
+.regulation-management-page {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 24px !important;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+.regulation-management-container {
+  width: 100%;
+  max-width: 1500px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 0 !important;
+}
+
+/* PAGE TITLE ALIGNMENT */
+
+.regulation-page-heading {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 28px;
+  padding: 0;
+}
+
+/* REGULATION LIST */
+
+.regulation-list-card {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* RESPONSIVE SPACING */
+
+@media (max-width: 768px) {
+  .regulation-management-page {
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .regulation-management-page {
+    padding: 12px !important;
+  }
+}

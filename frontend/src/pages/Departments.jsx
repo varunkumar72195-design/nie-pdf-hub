@@ -1,7 +1,9 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
 import {
+  ArrowLeft,
   ArrowRight,
   Building2,
   RefreshCw,
@@ -18,14 +20,12 @@ function Departments() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  // FETCH DEPARTMENTS
   const fetchDepartments = async () => {
     try {
       setLoading(true);
       setError("");
 
       const response = await API.get("/departments/");
-
       setDepartments(response.data);
     } catch (err) {
       console.error("Department API error:", err);
@@ -43,7 +43,6 @@ function Departments() {
     fetchDepartments();
   }, []);
 
-  // SEARCH DEPARTMENTS
   const filteredDepartments = departments.filter((department) =>
     `${department.name} ${department.code}`
       .toLowerCase()
@@ -52,38 +51,35 @@ function Departments() {
 
   return (
     <div className="departments-page">
-
-      {/* SHARED STUDENT NAVBAR */}
       <StudentNavbar />
 
-      {/* PAGE HERO */}
       <header className="dept-hero">
         <span>ACADEMIC RESOURCES</span>
-
         <h1>Explore Departments</h1>
-
         <p>
           Choose your department and discover organized academic
           resources for your learning journey.
         </p>
       </header>
 
-      {/* DEPARTMENT CONTENT */}
       <main className="dept-content">
 
-        {/* TOOLBAR */}
+        {/* Back to Home */}
+        <div className="dept-back-wrapper">
+          <Link to="/" className="dept-back-button">
+            <ArrowLeft size={18} />
+            Back to Home
+          </Link>
+        </div>
+
         <div className="dept-toolbar">
           <div>
             <h2>All Departments</h2>
-
-            <p>
-              {departments.length} departments available
-            </p>
+            <p>{departments.length} departments available</p>
           </div>
 
           <div className="dept-search">
             <Search size={19} />
-
             <input
               type="text"
               placeholder="Search department..."
@@ -93,14 +89,12 @@ function Departments() {
           </div>
         </div>
 
-        {/* LOADING */}
         {loading && (
           <div className="dept-status">
             Loading departments...
           </div>
         )}
 
-        {/* ERROR */}
         {error && (
           <div className="dept-error">
             <p>{error}</p>
@@ -112,68 +106,53 @@ function Departments() {
           </div>
         )}
 
-        {/* EMPTY RESULTS */}
-        {!loading &&
-          !error &&
-          filteredDepartments.length === 0 && (
-            <div className="dept-status">
-              {search
-                ? "No matching departments found."
-                : "No departments available yet."}
-            </div>
-          )}
+        {!loading && !error && filteredDepartments.length === 0 && (
+          <div className="dept-status">
+            {search
+              ? "No matching departments found."
+              : "No departments available yet."}
+          </div>
+        )}
 
-        {/* DEPARTMENT CARDS */}
-        {!loading &&
-          !error &&
-          filteredDepartments.length > 0 && (
-            <div className="dept-grid">
-
-              {filteredDepartments.map((department) => (
-                <Link
-                  to={`/departments/${department.id}/years`}
-                  className="dept-card"
-                  key={department.id}
-                >
-                  <div className="dept-card-top">
-
-                    <div className="dept-card-icon">
-                      <Building2 size={28} />
-                    </div>
-
-                    <span>{department.code}</span>
-
+        {!loading && !error && filteredDepartments.length > 0 && (
+          <div className="dept-grid">
+            {filteredDepartments.map((department) => (
+              <Link
+                to={`/departments/${department.id}/regulations`}
+                className="dept-card"
+                key={department.id}
+              >
+                <div className="dept-card-top">
+                  <div className="dept-card-icon">
+                    <Building2 size={28} />
                   </div>
 
-                  <h3>{department.name}</h3>
+                  <span>{department.code}</span>
+                </div>
 
-                  <p>
-                    {department.description ||
-                      "Explore academic materials and resources."}
-                  </p>
+                <h3>{department.name}</h3>
 
-                  <div className="dept-card-action">
-                    Explore Resources
-                    <ArrowRight size={17} />
-                  </div>
+                <p>
+                  {department.description ||
+                    "Explore academic materials and resources."}
+                </p>
 
-                </Link>
-              ))}
-
-            </div>
-          )}
-
+                <div className="dept-card-action">
+                  Explore Resources
+                  <ArrowRight size={17} />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </main>
 
-      {/* FOOTER */}
       <footer className="dept-footer">
         <strong>NIE PDF HUB</strong>
-
         <p>
           Academic resources made accessible for every student.
         </p>
       </footer>
-
     </div>
   );
 }

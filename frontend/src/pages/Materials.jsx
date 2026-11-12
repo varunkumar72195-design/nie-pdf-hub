@@ -382,14 +382,6 @@ function Materials() {
             <p>
               Study materials have not been uploaded for this subject yet.
             </p>
-
-            <Link
-              to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects`}
-              className="material-view-button"
-            >
-              <ArrowLeft size={16} />
-              Back to Subjects
-            </Link>
           </div>
         )}
 

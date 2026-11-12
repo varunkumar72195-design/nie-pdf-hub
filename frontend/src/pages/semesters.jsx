@@ -163,7 +163,6 @@ function Semesters() {
         {/* BREADCRUMB */}
         <nav className="semester-breadcrumb" aria-label="Breadcrumb">
           <Link to="/departments">Departments</Link>
-
           <span>/</span>
 
           <Link to={`/departments/${departmentId}/years`}>
@@ -171,7 +170,6 @@ function Semesters() {
           </Link>
 
           <span>/</span>
-
           <span className="breadcrumb-current">Semesters</span>
         </nav>
 
@@ -237,14 +235,6 @@ function Semesters() {
             <p>
               No semesters are currently available for this academic year.
             </p>
-
-            <Link
-              to={`/departments/${departmentId}/years`}
-              className="semester-action"
-            >
-              Back to Academic Years
-              <ArrowRight size={17} />
-            </Link>
           </div>
         )}
 

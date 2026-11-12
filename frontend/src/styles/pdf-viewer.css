@@ -124,3 +124,23 @@
     min-height: 400px;
   }
 }
+.pdf-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 17px;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  color: #334155;
+  background: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.pdf-back-link:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  transform: translateX(-3px);
+}

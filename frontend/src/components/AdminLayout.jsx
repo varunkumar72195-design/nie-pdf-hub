@@ -14,6 +14,7 @@ import {
   CalendarDays,
   CalendarCheck,
   BookOpen,
+  BookMarked,
   FileUp,
   Settings,
   House,
@@ -35,6 +36,7 @@ function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // ADMIN NAVIGATION ITEMS
   const navItems = [
     {
       label: "Dashboard",
@@ -45,6 +47,11 @@ function AdminLayout() {
       label: "Departments",
       path: "/admin/departments",
       icon: Building2,
+    },
+    {
+      label: "Regulations",
+      path: "/admin/regulations",
+      icon: BookMarked,
     },
     {
       label: "Academic Years",
@@ -76,6 +83,7 @@ function AdminLayout() {
     },
   ];
 
+  // CURRENT PAGE
   const currentPage =
     pageItems.find(
       (item) =>
@@ -93,7 +101,9 @@ function AdminLayout() {
     }
 
     API.get("/admin/me", { requiresAuth: true })
-      .then((response) => setAdmin(response.data))
+      .then((response) => {
+        setAdmin(response.data);
+      })
       .catch((error) => {
         console.error("Admin profile error:", error);
 
@@ -122,8 +132,12 @@ function AdminLayout() {
     navigate("/manage-portal", { replace: true });
   };
 
-  const closeSidebar = () => setSidebarOpen(false);
+  // CLOSE SIDEBAR
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
 
+  // FORMATTED DATE
   const formattedDate = new Intl.DateTimeFormat("en-IN", {
     weekday: "short",
     day: "2-digit",
@@ -133,6 +147,8 @@ function AdminLayout() {
 
   return (
     <div className="admin-shell">
+
+      {/* MOBILE OVERLAY */}
       {sidebarOpen && (
         <button
           className="admin-mobile-overlay"
@@ -142,9 +158,13 @@ function AdminLayout() {
       )}
 
       {/* SIDEBAR */}
-      <aside className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}>
+      <aside
+        className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}
+      >
+
         {/* BRAND */}
         <div className="admin-brand">
+
           <div className="admin-brand-logo">
             <img
               src="/nie-logo.png"
@@ -164,12 +184,16 @@ function AdminLayout() {
           >
             <X size={20} />
           </button>
+
         </div>
 
         {/* MAIN MENU */}
-        <div className="admin-nav-label">MAIN MENU</div>
+        <div className="admin-nav-label">
+          MAIN MENU
+        </div>
 
         <nav className="admin-nav">
+
           {navItems.map((item) => {
             const Icon = item.icon;
 
@@ -188,6 +212,7 @@ function AdminLayout() {
               </NavLink>
             );
           })}
+
         </nav>
 
         {/* PREFERENCES */}
@@ -196,8 +221,11 @@ function AdminLayout() {
         </div>
 
         <nav className="admin-nav">
+
+          {/* SETTINGS */}
           <NavLink
             to="/admin/settings"
+            end
             onClick={closeSidebar}
             className={({ isActive }) =>
               `admin-nav-link ${isActive ? "active" : ""}`
@@ -207,6 +235,7 @@ function AdminLayout() {
             <span>Settings</span>
           </NavLink>
 
+          {/* PUBLIC HOME */}
           <a
             href="/"
             className="admin-nav-link"
@@ -215,19 +244,27 @@ function AdminLayout() {
             <House size={19} />
             <span>Go to Public Home</span>
           </a>
+
         </nav>
 
-        {/* SIDEBAR ADMIN PROFILE */}
+        {/* ADMIN PROFILE */}
         <div className="admin-sidebar-footer">
+
           <div className="admin-user-avatar">
             {admin?.name?.charAt(0)?.toUpperCase() || "A"}
           </div>
 
           <div className="admin-user-info">
-            <strong>{admin?.name || "Admin"}</strong>
-            <span>{admin?.email || "Loading profile..."}</span>
+            <strong>
+              {admin?.name || "Admin"}
+            </strong>
+
+            <span>
+              {admin?.email || "Loading profile..."}
+            </span>
           </div>
 
+          {/* LOGOUT */}
           <button
             className="admin-logout-icon"
             onClick={handleLogout}
@@ -236,14 +273,20 @@ function AdminLayout() {
           >
             <LogOut size={19} />
           </button>
+
         </div>
+
       </aside>
 
       {/* MAIN CONTENT */}
       <main className="admin-main">
+
         {/* TOPBAR */}
         <header className="admin-topbar">
+
           <div className="admin-topbar-left">
+
+            {/* MOBILE MENU */}
             <button
               className="admin-menu-toggle"
               onClick={() => setSidebarOpen(true)}
@@ -253,8 +296,10 @@ function AdminLayout() {
             </button>
 
             <div className="admin-heading-group">
+
               {/* BREADCRUMB */}
               <div className="admin-breadcrumb">
+
                 <Link to="/admin/dashboard">
                   <House size={13} />
                   <span>Admin</span>
@@ -265,16 +310,20 @@ function AdminLayout() {
                 <span className="admin-breadcrumb-current">
                   {currentPage}
                 </span>
+
               </div>
 
-              {/* CURRENT PAGE TITLE */}
+              {/* PAGE TITLE */}
               <h1 className="admin-topbar-heading">
                 {currentPage}
               </h1>
+
             </div>
+
           </div>
 
           <div className="admin-topbar-right">
+
             {/* CURRENT DATE */}
             <div className="admin-date-display">
               <CalendarDays size={17} />
@@ -283,27 +332,37 @@ function AdminLayout() {
 
             {/* ADMIN PROFILE */}
             <div className="admin-topbar-profile">
+
               <div className="admin-topbar-avatar">
                 {admin?.name?.charAt(0)?.toUpperCase() || "A"}
               </div>
 
               <div className="admin-topbar-profile-info">
-                <strong>{admin?.name || "Admin"}</strong>
+
+                <strong>
+                  {admin?.name || "Admin"}
+                </strong>
 
                 <span>
                   <ShieldCheck size={12} />
                   Administrator
                 </span>
+
               </div>
+
             </div>
+
           </div>
+
         </header>
 
         {/* PAGE CONTENT */}
         <div className="admin-page-content">
           <Outlet />
         </div>
+
       </main>
+
     </div>
   );
 }

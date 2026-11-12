@@ -5,13 +5,17 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.department import Department
 from app.models.academic_year import AcademicYear
+from app.models.regulation import Regulation
+
 from app.schemas.department import (
     DepartmentCreate,
     DepartmentUpdate,
     DepartmentResponse
 )
+
 from app.models.admin import Admin
 from app.dependencies.auth import get_current_admin
+
 
 router = APIRouter(
     prefix="/api/departments",
@@ -27,6 +31,41 @@ def get_departments(db: Session = Depends(get_db)):
         .order_by(Department.name)
         .all()
     )
+
+
+# PUBLIC: Get regulations for a department
+@router.get("/{department_id}/regulations/")
+def get_department_regulations(
+    department_id: int,
+    db: Session = Depends(get_db)
+):
+    department = db.query(Department).filter(
+        Department.id == department_id
+    ).first()
+
+    if not department:
+        raise HTTPException(
+            status_code=404,
+            detail="Department not found"
+        )
+
+    regulations = (
+        db.query(Regulation)
+        .filter(Regulation.department_id == department_id)
+        .order_by(Regulation.code)
+        .all()
+    )
+
+    return [
+        {
+            "id": regulation.id,
+            "name": regulation.name,
+            "code": regulation.code,
+            "description": regulation.description,
+            "department_id": regulation.department_id
+        }
+        for regulation in regulations
+    ]
 
 
 # ADMIN ONLY: Create department

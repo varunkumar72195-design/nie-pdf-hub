@@ -5,12 +5,15 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.academic_year import AcademicYear
 from app.models.department import Department
+from app.models.regulation import Regulation
 from app.models.semester import Semester
+
 from app.schemas.academic_year import (
     AcademicYearCreate,
     AcademicYearUpdate,
     AcademicYearResponse
 )
+
 from app.dependencies.auth import get_current_admin
 
 
@@ -21,6 +24,7 @@ router = APIRouter(
 
 
 # PUBLIC: Get academic years for a department
+# Kept for backward compatibility with the old frontend route.
 @router.get(
     "/departments/{department_id}/years",
     response_model=list[AcademicYearResponse]
@@ -36,9 +40,45 @@ def get_academic_years(
     if not department:
         raise HTTPException(404, "Department not found")
 
-    return db.query(AcademicYear).filter(
-        AcademicYear.department_id == department_id
-    ).order_by(AcademicYear.year_number).all()
+    return (
+        db.query(AcademicYear)
+        .filter(AcademicYear.department_id == department_id)
+        .order_by(
+            AcademicYear.regulation_id,
+            AcademicYear.year_number
+        )
+        .all()
+    )
+
+
+# PUBLIC: Get academic years for a specific regulation
+@router.get(
+    "/regulations/{regulation_id}/academic-years",
+    response_model=list[AcademicYearResponse]
+)
+def get_regulation_academic_years(
+    regulation_id: int,
+    db: Session = Depends(get_db)
+):
+    regulation = db.query(Regulation).filter(
+        Regulation.id == regulation_id
+    ).first()
+
+    if not regulation:
+        raise HTTPException(
+            status_code=404,
+            detail="Regulation not found"
+        )
+
+    return (
+        db.query(AcademicYear)
+        .filter(
+            AcademicYear.regulation_id == regulation_id,
+            AcademicYear.department_id == regulation.department_id
+        )
+        .order_by(AcademicYear.year_number)
+        .all()
+    )
 
 
 # ADMIN: Get all academic years
@@ -50,10 +90,15 @@ def get_all_academic_years(
     db: Session = Depends(get_db),
     admin=Depends(get_current_admin)
 ):
-    return db.query(AcademicYear).order_by(
-        AcademicYear.department_id,
-        AcademicYear.year_number
-    ).all()
+    return (
+        db.query(AcademicYear)
+        .order_by(
+            AcademicYear.department_id,
+            AcademicYear.regulation_id,
+            AcademicYear.year_number
+        )
+        .all()
+    )
 
 
 # ADMIN: Create academic year
@@ -74,13 +119,28 @@ def create_academic_year(
     if not department:
         raise HTTPException(404, "Department not found")
 
+    regulation = db.query(Regulation).filter(
+        Regulation.id == data.regulation_id,
+        Regulation.department_id == data.department_id
+    ).first()
+
+    if not regulation:
+        raise HTTPException(
+            status_code=404,
+            detail="Regulation not found for this department"
+        )
+
     existing = db.query(AcademicYear).filter(
         AcademicYear.department_id == data.department_id,
+        AcademicYear.regulation_id == data.regulation_id,
         AcademicYear.year_number == data.year_number
     ).first()
 
     if existing:
-        raise HTTPException(409, "Academic year already exists")
+        raise HTTPException(
+            status_code=409,
+            detail="Academic year already exists for this regulation"
+        )
 
     academic_year = AcademicYear(**data.model_dump())
 
@@ -114,15 +174,39 @@ def update_academic_year(
     if not updates:
         raise HTTPException(400, "No fields provided for update")
 
-    if "year_number" in updates:
-        duplicate = db.query(AcademicYear).filter(
-            AcademicYear.department_id == academic_year.department_id,
-            AcademicYear.year_number == updates["year_number"],
-            AcademicYear.id != academic_year_id
-        ).first()
+    new_regulation_id = updates.get(
+        "regulation_id",
+        academic_year.regulation_id
+    )
 
-        if duplicate:
-            raise HTTPException(409, "Academic year already exists")
+    regulation = db.query(Regulation).filter(
+        Regulation.id == new_regulation_id,
+        Regulation.department_id == academic_year.department_id
+    ).first()
+
+    if not regulation:
+        raise HTTPException(
+            status_code=404,
+            detail="Regulation not found for this department"
+        )
+
+    new_year_number = updates.get(
+        "year_number",
+        academic_year.year_number
+    )
+
+    duplicate = db.query(AcademicYear).filter(
+        AcademicYear.department_id == academic_year.department_id,
+        AcademicYear.regulation_id == new_regulation_id,
+        AcademicYear.year_number == new_year_number,
+        AcademicYear.id != academic_year_id
+    ).first()
+
+    if duplicate:
+        raise HTTPException(
+            status_code=409,
+            detail="Academic year already exists for this regulation"
+        )
 
     for field, value in updates.items():
         setattr(academic_year, field, value)
@@ -153,12 +237,16 @@ def delete_academic_year(
 
     if semester_count > 0:
         raise HTTPException(
-            409,
-            "Cannot delete academic year because it contains semesters. "
-            "Delete its semesters and materials first."
+            status_code=409,
+            detail=(
+                "Cannot delete academic year because it contains semesters. "
+                "Delete its semesters and materials first."
+            )
         )
 
     db.delete(academic_year)
     db.commit()
 
-    return {"message": "Academic year deleted successfully"}
+    return {
+        "message": "Academic year deleted successfully"
+    }

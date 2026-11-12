@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, Integer, String, Text, DateTime, func
 from sqlalchemy.orm import relationship
 
@@ -19,6 +18,14 @@ class Department(Base):
         nullable=False
     )
 
+    # Department → Regulations
+    regulations = relationship(
+        "Regulation",
+        back_populates="department",
+        cascade="all, delete-orphan"
+    )
+
+    # Department → Academic Years
     academic_years = relationship(
         "AcademicYear",
         back_populates="department",

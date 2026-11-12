@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import StudentNavbar from "../components/StudentNavbar";
 
 import {
+  ArrowLeft,
   ArrowRight,
   CalendarDays,
   GraduationCap,
@@ -16,26 +17,24 @@ import API from "../services/api";
 import "../styles/academic-years.css";
 
 function AcademicYears() {
-  const { departmentId } = useParams();
+  const { departmentId, regulationId } = useParams();
 
   const [years, setYears] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // FETCH ACADEMIC YEARS
   const fetchYears = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      if (!departmentId) {
-        throw new Error("Department ID is missing.");
+      if (!departmentId || !regulationId) {
+        throw new Error("Department ID or Regulation ID is missing.");
       }
 
-      const requestUrl = `/departments/${departmentId}/years`;
+      const requestUrl = `/regulations/${regulationId}/academic-years`;
 
-      console.log("ACADEMIC YEARS COMPONENT UPDATED");
-      console.log("REQUEST URL:", requestUrl);
+      console.log("ACADEMIC YEARS REQUEST:", requestUrl);
       console.log("API BASE URL:", API.defaults.baseURL);
 
       const response = await API.get(requestUrl);
@@ -70,7 +69,7 @@ function AcademicYears() {
           setError(
             typeof detail === "string"
               ? detail
-              : "Department not found."
+              : "Regulation or academic years not found."
           );
         } else if (err.response.status >= 500) {
           setError("Server error. Please check your backend.");
@@ -88,7 +87,7 @@ function AcademicYears() {
     } finally {
       setLoading(false);
     }
-  }, [departmentId]);
+  }, [departmentId, regulationId]);
 
   useEffect(() => {
     fetchYears();
@@ -97,7 +96,6 @@ function AcademicYears() {
   return (
     <div className="years-page">
 
-      {/* SHARED STUDENT NAVBAR */}
       <StudentNavbar />
 
       {/* HERO */}
@@ -114,6 +112,17 @@ function AcademicYears() {
 
       {/* MAIN CONTENT */}
       <main className="years-content">
+
+        {/* BACK TO REGULATIONS */}
+        <div className="years-back-wrapper">
+          <Link
+            to={`/departments/${departmentId}/regulations`}
+            className="years-back-button"
+          >
+            <ArrowLeft size={18} />
+            Back to Regulations
+          </Link>
+        </div>
 
         <div className="years-heading">
           <div>
@@ -155,15 +164,8 @@ function AcademicYears() {
 
             <p>
               No academic years are currently available
-              for this department.
+              for this regulation.
             </p>
-
-            <Link
-              to="/departments"
-              className="year-action"
-            >
-              Back to Departments
-            </Link>
           </div>
         )}
 

@@ -1,8 +1,7 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-
+from app.routes.regulations import router as regulation_router
 from app.database import engine
 from app.routes.analytics import router as analytics_router
 from app.routes.admin import router as admin_router
@@ -21,11 +20,15 @@ app = FastAPI(
 )
 
 
-# CORS configuration
+# ==========================================
+# CORS CONFIGURATION
+# ==========================================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "https://nie-pdf-hub-6vi5.vercel.app",
         "https://nie-pdf-hub-6vi5-git-main-itzmeevaruns-projects.vercel.app",
     ],
@@ -35,7 +38,10 @@ app.add_middleware(
 )
 
 
-# Register API routers
+# ==========================================
+# REGISTER API ROUTERS
+# ==========================================
+
 app.include_router(admin_router)
 app.include_router(department_router)
 app.include_router(academic_year_router)
@@ -44,8 +50,12 @@ app.include_router(subject_router)
 app.include_router(material_router)
 app.include_router(announcement_router)
 app.include_router(analytics_router)
+app.include_router(regulation_router)
 
-# Home route
+# ==========================================
+# HOME ROUTE
+# ==========================================
+
 @app.get("/")
 async def home():
     return {
@@ -54,7 +64,10 @@ async def home():
     }
 
 
-# API health check
+# ==========================================
+# API HEALTH CHECK
+# ==========================================
+
 @app.get("/api/health")
 async def health_check():
     return {
@@ -63,7 +76,10 @@ async def health_check():
     }
 
 
-# Database health check
+# ==========================================
+# DATABASE HEALTH CHECK
+# ==========================================
+
 @app.get("/api/health/database")
 async def database_health():
     try:
@@ -75,7 +91,9 @@ async def database_health():
             "type": "PostgreSQL"
         }
 
-    except Exception:
+    except Exception as e:
+        print("Database health error:", str(e))
+
         return {
             "database": "disconnected"
         }

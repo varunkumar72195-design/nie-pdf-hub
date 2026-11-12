@@ -4,24 +4,33 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 from app.config import settings
 
-# Create PostgreSQL engine
+
+# PostgreSQL engine configured for Supabase connections
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    pool_recycle=300,
+    pool_size=3,
+    max_overflow=2,
+    pool_timeout=30,
+    connect_args={
+        "connect_timeout": 10,
+        "sslmode": "require",
+    },
 )
 
-# Create database sessions
+# Database sessions
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    bind=engine
+    bind=engine,
 )
 
-# Base class for database models
+# Base class for SQLAlchemy models
 Base = declarative_base()
 
 
-# Database dependency for FastAPI
+# FastAPI database dependency
 def get_db():
     db = SessionLocal()
 

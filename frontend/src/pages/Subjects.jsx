@@ -175,7 +175,6 @@ function Subjects() {
 
   return (
     <div className="subjects-page">
-      {/* SHARED STUDENT NAVBAR */}
       <StudentNavbar />
 
       {/* HERO */}
@@ -324,14 +323,6 @@ function Subjects() {
             <p>
               No subjects have been added to this semester yet.
             </p>
-
-            <Link
-              to={`/departments/${departmentId}/years/${yearId}/semesters`}
-              className="subject-action"
-            >
-              Back to Semesters
-              <ArrowRight size={17} />
-            </Link>
           </div>
         )}
 

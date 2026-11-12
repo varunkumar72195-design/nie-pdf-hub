@@ -230,7 +230,7 @@ function Home() {
 
           <div className="hero-actions">
             <Link to="/departments" className="primary-btn">
-              Explore Departments <ArrowRight size={18} />
+              Explore Materials <ArrowRight size={18} />
             </Link>
 
             <a href="#about" className="secondary-btn">

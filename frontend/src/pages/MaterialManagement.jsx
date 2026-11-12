@@ -94,6 +94,10 @@ function MaterialManagement() {
     }
 
     if (!err.response) {
+      if (err.code === "ECONNABORTED") {
+        return "PDF upload is taking too long. Please try again.";
+      }
+
       return "Unable to connect to the server. Check whether the backend is running.";
     }
 
@@ -198,7 +202,6 @@ function MaterialManagement() {
 
   // --------------------------------------------------
   // FETCH DEPARTMENTS
-  // GET /api/departments/
   // --------------------------------------------------
 
   const fetchDepartments = async () => {
@@ -209,7 +212,10 @@ function MaterialManagement() {
         Array.isArray(response.data) ? response.data : []
       );
     } catch (err) {
-      console.error("Department loading error:", err.response?.data || err);
+      console.error(
+        "Department loading error:",
+        err.response?.data || err
+      );
 
       setError(
         getErrorMessage(err, "Unable to load departments.")
@@ -219,7 +225,6 @@ function MaterialManagement() {
 
   // --------------------------------------------------
   // FETCH ACADEMIC YEARS
-  // GET /api/academic-years
   // --------------------------------------------------
 
   const fetchYears = async () => {
@@ -232,7 +237,10 @@ function MaterialManagement() {
         Array.isArray(response.data) ? response.data : []
       );
     } catch (err) {
-      console.error("Academic year loading error:", err.response?.data || err);
+      console.error(
+        "Academic year loading error:",
+        err.response?.data || err
+      );
 
       setError(
         getErrorMessage(err, "Unable to load academic years.")
@@ -242,7 +250,6 @@ function MaterialManagement() {
 
   // --------------------------------------------------
   // FETCH SEMESTERS
-  // GET /api/academic-years/{id}/semesters
   // --------------------------------------------------
 
   const fetchSemesters = async (id) => {
@@ -255,7 +262,10 @@ function MaterialManagement() {
         Array.isArray(response.data) ? response.data : []
       );
     } catch (err) {
-      console.error("Semester loading error:", err.response?.data || err);
+      console.error(
+        "Semester loading error:",
+        err.response?.data || err
+      );
 
       setError(
         getErrorMessage(err, "Unable to load semesters.")
@@ -265,7 +275,6 @@ function MaterialManagement() {
 
   // --------------------------------------------------
   // FETCH SUBJECTS
-  // GET /api/semesters/{id}/subjects
   // --------------------------------------------------
 
   const fetchSubjects = async (id) => {
@@ -278,7 +287,10 @@ function MaterialManagement() {
         Array.isArray(response.data) ? response.data : []
       );
     } catch (err) {
-      console.error("Subject loading error:", err.response?.data || err);
+      console.error(
+        "Subject loading error:",
+        err.response?.data || err
+      );
 
       setError(
         getErrorMessage(err, "Unable to load subjects.")
@@ -288,7 +300,6 @@ function MaterialManagement() {
 
   // --------------------------------------------------
   // FETCH MATERIALS
-  // GET /api/subjects/{id}/materials
   // --------------------------------------------------
 
   const fetchMaterials = async (id) => {
@@ -304,7 +315,10 @@ function MaterialManagement() {
         Array.isArray(response.data) ? response.data : []
       );
     } catch (err) {
-      console.error("Material loading error:", err.response?.data || err);
+      console.error(
+        "Material loading error:",
+        err.response?.data || err
+      );
 
       setError(
         getErrorMessage(err, "Unable to load PDF materials.")
@@ -469,6 +483,7 @@ function MaterialManagement() {
           payload,
           {
             requiresAuth: true,
+            timeout: 120000,
           }
         );
 
@@ -479,7 +494,10 @@ function MaterialManagement() {
 
       await fetchMaterials(subjectId);
     } catch (err) {
-      console.error("Material save error:", err.response?.data || err);
+      console.error(
+        "Material save error:",
+        err.response?.data || err
+      );
 
       setError(
         getErrorMessage(err, "Unable to save PDF material.")
@@ -491,7 +509,6 @@ function MaterialManagement() {
 
   // --------------------------------------------------
   // DELETE MATERIAL
-  // DELETE /api/materials/{id}
   // --------------------------------------------------
 
   const handleDelete = async (material) => {
@@ -517,7 +534,10 @@ function MaterialManagement() {
 
       await fetchMaterials(subjectId);
     } catch (err) {
-      console.error("Material delete error:", err.response?.data || err);
+      console.error(
+        "Material delete error:",
+        err.response?.data || err
+      );
 
       setError(
         getErrorMessage(err, "Unable to delete PDF material.")
@@ -627,8 +647,6 @@ function MaterialManagement() {
   return (
     <div className="material-management">
 
-      {/* PAGE HEADER */}
-
       <div className="material-page-header">
         <div>
           <span className="material-eyebrow">
@@ -652,8 +670,6 @@ function MaterialManagement() {
         </button>
       </div>
 
-      {/* ERROR MESSAGE */}
-
       {error && (
         <div className="material-alert material-alert-error">
           <span>{error}</span>
@@ -666,8 +682,6 @@ function MaterialManagement() {
           </button>
         </div>
       )}
-
-      {/* SUCCESS MESSAGE */}
 
       {success && (
         <div className="material-alert material-alert-success">
@@ -682,8 +696,6 @@ function MaterialManagement() {
         </div>
       )}
 
-      {/* ACADEMIC SELECTION */}
-
       <section className="material-selection-card">
 
         <div className="material-section-heading">
@@ -696,8 +708,6 @@ function MaterialManagement() {
         </div>
 
         <div className="material-filter-grid">
-
-          {/* DEPARTMENT */}
 
           <div className="material-field">
             <label>Department</label>
@@ -723,8 +733,6 @@ function MaterialManagement() {
               ))}
             </select>
           </div>
-
-          {/* ACADEMIC YEAR */}
 
           <div className="material-field">
             <label>Academic Year</label>
@@ -757,8 +765,6 @@ function MaterialManagement() {
             </select>
           </div>
 
-          {/* SEMESTER */}
-
           <div className="material-field">
             <label>Semester</label>
 
@@ -783,8 +789,6 @@ function MaterialManagement() {
             </select>
           </div>
 
-          {/* SUBJECT */}
-
           <div className="material-field">
             <label>Subject</label>
 
@@ -808,8 +812,6 @@ function MaterialManagement() {
 
         </div>
       </section>
-
-      {/* MATERIAL LIST */}
 
       <section className="material-list-section">
 
@@ -988,8 +990,6 @@ function MaterialManagement() {
 
       </section>
 
-      {/* UPLOAD / EDIT MODAL */}
-
       {showForm && (
 
         <div
@@ -1031,8 +1031,6 @@ function MaterialManagement() {
 
             <form onSubmit={handleSubmit}>
 
-              {/* TITLE */}
-
               <div className="material-field">
                 <label>PDF Title *</label>
 
@@ -1051,8 +1049,6 @@ function MaterialManagement() {
                 />
               </div>
 
-              {/* DESCRIPTION */}
-
               <div className="material-field">
                 <label>Description</label>
 
@@ -1068,8 +1064,6 @@ function MaterialManagement() {
                   }
                 />
               </div>
-
-              {/* PDF FILE */}
 
               <div className="material-field">
 
@@ -1108,8 +1102,6 @@ function MaterialManagement() {
                 )}
 
               </div>
-
-              {/* BUTTONS */}
 
               <div className="material-modal-actions">
 

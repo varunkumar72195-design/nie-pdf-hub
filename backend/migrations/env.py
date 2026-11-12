@@ -13,6 +13,7 @@ from app.models import (
     Department,
     AcademicYear,
     Semester,
+    Regulation,
     Subject,
     Material,
     Announcement,

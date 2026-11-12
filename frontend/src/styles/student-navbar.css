@@ -1,6 +1,11 @@
 
+/* ==========================================
+   STUDENT NAVBAR
+========================================== */
+
 .student-navbar {
   width: 100%;
+  max-width: 100%;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -9,26 +14,48 @@
   box-shadow: 0 3px 15px rgba(15, 35, 70, 0.05);
 }
 
+/* NAVBAR CONTAINER */
+
 .student-navbar-container {
   width: 100%;
   max-width: 1400px;
   min-height: 78px;
   padding: 0 6%;
-  margin: auto;
-
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 30px;
+  gap: 20px;
+  box-sizing: border-box;
 }
+
+/* LOGO */
 
 .student-navbar-logo {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
+  min-width: 0;
+  flex-shrink: 0;
   text-decoration: none;
   color: #14213d;
+}
+
+.student-logo-image {
+  width: 68px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.student-logo-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .student-logo-icon {
@@ -37,13 +64,13 @@
   border-radius: 12px;
   background: #2563eb;
   color: #ffffff;
-
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .student-logo-text {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -53,6 +80,7 @@
   font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.4px;
+  white-space: nowrap;
 }
 
 .student-logo-text strong {
@@ -63,6 +91,8 @@
   color: #7b8799;
   font-size: 11px;
 }
+
+/* DESKTOP LINKS */
 
 .student-nav-links {
   display: flex;
@@ -83,23 +113,21 @@
   color: #2563eb;
 }
 
+/* CTA BUTTON */
+
 .student-nav-cta {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
-
   padding: 12px 19px;
   border-radius: 9px;
-
   background: #2563eb;
   color: #ffffff;
   text-decoration: none;
-
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
@@ -108,8 +136,11 @@
   transform: translateY(-1px);
 }
 
+/* MOBILE MENU BUTTON */
+
 .student-menu-toggle {
   display: none;
+  flex-shrink: 0;
   border: none;
   background: transparent;
   color: #14213d;
@@ -117,8 +148,43 @@
   padding: 7px;
 }
 
+/* MOBILE MENU */
+
 .student-mobile-menu {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 5% 20px;
+  background: #ffffff;
+  border-top: 1px solid #edf0f5;
+  box-sizing: border-box;
+}
+
+.student-mobile-menu > a {
+  padding: 13px 12px;
+  border-radius: 8px;
+  color: #526078;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.student-mobile-menu > a:hover,
+.student-mobile-menu > a.active {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.student-mobile-menu .student-mobile-cta {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 /* TABLET AND MOBILE */
@@ -139,48 +205,19 @@
     align-items: center;
     justify-content: center;
   }
-
-  .student-mobile-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-
-    padding: 12px 5% 20px;
-    background: #ffffff;
-    border-top: 1px solid #edf0f5;
-  }
-
-  .student-mobile-menu > a {
-    padding: 13px 12px;
-    border-radius: 8px;
-
-    color: #526078;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .student-mobile-menu > a:hover,
-  .student-mobile-menu > a.active {
-    background: #eff6ff;
-    color: #2563eb;
-  }
-
-  .student-mobile-menu .student-mobile-cta {
-    margin-top: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-
-    background: #2563eb;
-    color: #ffffff;
-  }
 }
 
+/* SMALL MOBILE */
+
 @media (max-width: 480px) {
-  .student-logo-text span {
-    font-size: 17px;
+  .student-navbar-container {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .student-logo-image {
+    width: 55px;
+    height: 55px;
   }
 
   .student-logo-icon {
@@ -188,39 +225,11 @@
     height: 40px;
   }
 
+  .student-logo-text span {
+    font-size: 17px;
+  }
+
   .student-logo-text small {
     font-size: 10px;
-  }
-}
-
-/* OFFICIAL NIE LOGO */
-
-.student-logo-image {
-  width: 68px;
-  height: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.student-logo-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-.student-navbar-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-@media (max-width: 600px) {
-  .student-logo-image {
-    width: 55px;
-    height: 55px;
   }
 }
