@@ -5,3 +5,4 @@ from app.models.semester import Semester
 from app.models.subject import Subject
 from app.models.material import Material
 from app.models.announcement import Announcement
+from app.models.analytics import AnalyticsEvent

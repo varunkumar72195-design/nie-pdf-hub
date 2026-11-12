@@ -14,9 +14,10 @@ from app.models import (
     AcademicYear,
     Semester,
     Subject,
-    Material
+    Material,
+    Announcement,
+    AnalyticsEvent
 )
-
 config = context.config
 
 if config.config_file_name is not None:

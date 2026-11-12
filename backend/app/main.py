@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.database import engine
-
+from app.routes.analytics import router as analytics_router
 from app.routes.admin import router as admin_router
 from app.routes.departments import router as department_router
 from app.routes.academic_years import router as academic_year_router
@@ -43,7 +43,7 @@ app.include_router(semester_router)
 app.include_router(subject_router)
 app.include_router(material_router)
 app.include_router(announcement_router)
-
+app.include_router(analytics_router)
 
 # Home route
 @app.get("/")
