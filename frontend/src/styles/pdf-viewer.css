@@ -14,7 +14,10 @@
   color: #172033;
 }
 
-/* HEADER */
+/* ==========================================
+   HEADER
+========================================== */
+
 .pdf-viewer-header {
   min-height: 72px;
   padding: 0 6%;
@@ -45,7 +48,8 @@
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
-  transition: background 0.2s ease, border-color 0.2s ease,
+  transition: background 0.2s ease,
+    border-color 0.2s ease,
     transform 0.2s ease;
 }
 
@@ -55,7 +59,10 @@
   transform: translateX(-3px);
 }
 
-/* MAIN LAYOUT */
+/* ==========================================
+   MAIN LAYOUT
+========================================== */
+
 .pdf-viewer-container {
   width: 100%;
   max-width: 1250px;
@@ -104,7 +111,10 @@
   font-size: 13px;
 }
 
-/* DOWNLOAD */
+/* ==========================================
+   DOWNLOAD BUTTON
+========================================== */
+
 .pdf-download-button {
   display: inline-flex;
   align-items: center;
@@ -132,7 +142,10 @@
   cursor: not-allowed;
 }
 
-/* TOOLBAR */
+/* ==========================================
+   TOOLBAR
+========================================== */
+
 .pdf-toolbar {
   min-height: 58px;
   padding: 10px 18px;
@@ -164,7 +177,8 @@
   background: #fff;
   color: #344256;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease,
+    color 0.2s ease;
 }
 
 .pdf-tool-button:hover:not(:disabled) {
@@ -192,7 +206,10 @@
   font-weight: 600;
 }
 
-/* 3D BOOK STAGE */
+/* ==========================================
+   3D BOOK STAGE
+========================================== */
+
 .pdf-frame-container {
   width: 100%;
   min-height: 500px;
@@ -220,16 +237,23 @@
   background: transparent;
 }
 
-/* IMPORTANT:
-   Desktop two-page layout is controlled by
-   HTMLFlipBook's usePortrait={false}.
+/* Desktop two-page layout is controlled by
+   HTMLFlipBook usePortrait={false}.
 */
+
+/* ==========================================
+   FLIP BOOK
+========================================== */
+
 .nie-flip-book {
   margin: 0 auto !important;
   max-width: 100%;
 }
 
-/* INDIVIDUAL PHYSICAL PAGE */
+/* ==========================================
+   INDIVIDUAL PHYSICAL PAGE
+========================================== */
+
 .flip-pdf-page {
   position: relative;
   width: 100%;
@@ -288,6 +312,10 @@
   text-align: center;
 }
 
+/* ==========================================
+   READER HINT
+========================================== */
+
 .pdf-reader-hint {
   margin: 12px 0 20px;
   color: #64748b;
@@ -295,7 +323,10 @@
   text-align: center;
 }
 
-/* LOADING AND ERROR */
+/* ==========================================
+   LOADING AND ERROR
+========================================== */
+
 .pdf-loading,
 .pdf-error {
   min-height: 250px;
@@ -337,7 +368,10 @@
   }
 }
 
-/* FULLSCREEN */
+/* ==========================================
+   FULLSCREEN
+========================================== */
+
 .pdf-viewer-fullscreen {
   width: 100%;
   height: 100vh;
@@ -357,7 +391,10 @@
   min-height: calc(100vh - 230px);
 }
 
-/* TABLET */
+/* ==========================================
+   TABLET
+========================================== */
+
 @media (min-width: 701px) and (max-width: 900px) {
   .pdf-viewer-container {
     padding: 0 15px;
@@ -368,7 +405,10 @@
   }
 }
 
-/* MOBILE */
+/* ==========================================
+   MOBILE
+========================================== */
+
 @media (max-width: 700px) {
   .pdf-viewer-header {
     min-height: 60px;
@@ -445,5 +485,42 @@
 
   .pdf-viewer-fullscreen .pdf-book-container {
     min-height: calc(100vh - 200px);
+  }
+}
+
+/* ==========================================
+   DISABLE DIRECT BOOK INTERACTION
+   Navigation buttons control page turning
+========================================== */
+
+.nie-flip-book {
+  pointer-events: none !important;
+  touch-action: pan-y !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent PDF content dragging and selection */
+
+.flip-pdf-page,
+.flip-pdf-page-content {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Navigation buttons remain interactive */
+
+.pdf-page-navigation button {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Mobile interaction control */
+
+@media (max-width: 700px) {
+  .nie-flip-book {
+    pointer-events: none !important;
+    touch-action: pan-y !important;
   }
 }

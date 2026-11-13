@@ -20,13 +20,8 @@ import {
   AlertCircle,
   Maximize2,
   Minimize2,
-  Plus,
-  Minus,
-  RotateCcw,
   ChevronLeft,
   ChevronRight,
-  Expand,
-  RefreshCw,
 } from "lucide-react";
 
 import StudentNavbar from "../components/StudentNavbar";
@@ -152,11 +147,8 @@ function PDFViewer() {
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Start with the actual viewport size to avoid an incorrect
-  // desktop layout on the first mobile render.
   const [containerWidth, setContainerWidth] = useState(() => {
     if (typeof window !== "undefined") {
       return Math.max(200, window.innerWidth - 40);
@@ -169,7 +161,7 @@ function PDFViewer() {
 
   const isMobile = containerWidth <= 700;
 
-  // FETCH OR RELOAD SIGNED PDF URL
+  // FETCH SIGNED PDF URL
   const loadPDF = useCallback(async () => {
     const requestId = ++requestIdRef.current;
 
@@ -179,7 +171,6 @@ function PDFViewer() {
       setPdfUrl("");
       setNumPages(0);
       setCurrentPage(1);
-      setZoom(1);
 
       const response = await API.get(
         `/materials/${materialId}/view`,
@@ -236,7 +227,7 @@ function PDFViewer() {
     };
   }, [loadPDF]);
 
-  // MEASURE BOOK CONTAINER
+  // MEASURE AVAILABLE WIDTH
   useEffect(() => {
     const element = bookContainerRef.current;
 
@@ -300,7 +291,7 @@ function PDFViewer() {
     console.error("PDF rendering failed:", err);
 
     setError(
-      "Unable to display this PDF. Check your connection and reload."
+      "Unable to display this PDF. Please check your connection."
     );
   }, []);
 
@@ -317,27 +308,6 @@ function PDFViewer() {
   const nextPage = useCallback(() => {
     bookRef.current?.pageFlip()?.flipNext();
   }, []);
-
-  // ZOOM CONTROLS
-  function zoomIn() {
-    setZoom((previous) =>
-      Math.min(1.8, Number((previous + 0.1).toFixed(1)))
-    );
-  }
-
-  function zoomOut() {
-    setZoom((previous) =>
-      Math.max(0.6, Number((previous - 0.1).toFixed(1)))
-    );
-  }
-
-  function resetZoom() {
-    setZoom(1);
-  }
-
-  function fitToWidth() {
-    setZoom(1);
-  }
 
   // KEYBOARD NAVIGATION
   useEffect(() => {
@@ -449,8 +419,6 @@ function PDFViewer() {
 
   const pageHeight = Math.round(pageWidth * 1.414);
 
-  const renderedPageWidth = Math.round(pageWidth * zoom);
-
   // PAGE COUNTER
   const lastVisiblePage = isMobile
     ? currentPage
@@ -509,54 +477,9 @@ function PDFViewer() {
           </button>
         </div>
 
-        {/* TOOLBAR */}
+        {/* SIMPLE READER TOOLBAR */}
         {!loading && !error && pdfUrl && numPages > 0 && (
           <div className="pdf-toolbar">
-            <div className="pdf-toolbar-group">
-              <button
-                type="button"
-                onClick={zoomOut}
-                disabled={zoom <= 0.6}
-                title="Zoom out"
-                className="pdf-tool-button"
-              >
-                <Minus size={18} />
-              </button>
-
-              <span className="pdf-zoom-value">
-                {Math.round(zoom * 100)}%
-              </span>
-
-              <button
-                type="button"
-                onClick={zoomIn}
-                disabled={zoom >= 1.8}
-                title="Zoom in"
-                className="pdf-tool-button"
-              >
-                <Plus size={18} />
-              </button>
-
-              <button
-                type="button"
-                onClick={resetZoom}
-                title="Reset zoom"
-                className="pdf-tool-button"
-              >
-                <RotateCcw size={16} />
-              </button>
-
-              <button
-                type="button"
-                onClick={fitToWidth}
-                title="Fit width"
-                className="pdf-tool-button pdf-fit-button"
-              >
-                <Expand size={16} />
-                <span>Fit width</span>
-              </button>
-            </div>
-
             <div className="pdf-toolbar-group pdf-page-navigation">
               <button
                 type="button"
@@ -621,17 +544,7 @@ function PDFViewer() {
           {error && (
             <div className="pdf-error">
               <AlertCircle size={25} />
-
               <p>{error}</p>
-
-              <button
-                type="button"
-                onClick={loadPDF}
-                className="pdf-download-button"
-              >
-                <RefreshCw size={17} />
-                Reload PDF
-              </button>
             </div>
           )}
 
@@ -654,14 +567,6 @@ function PDFViewer() {
               error={
                 <div className="pdf-error">
                   Unable to render this PDF.
-                  <button
-                    type="button"
-                    onClick={loadPDF}
-                    className="pdf-download-button"
-                  >
-                    <RefreshCw size={17} />
-                    Reload PDF
-                  </button>
                 </div>
               }
             >
@@ -683,10 +588,10 @@ function PDFViewer() {
                   autoSize={true}
                   maxShadowOpacity={0.45}
                   showCover={false}
-                  mobileScrollSupport={false}
-                  useMouseEvents={true}
+                  mobileScrollSupport={true}
+                  useMouseEvents={false}
                   swipeDistance={30}
-                  clickEventForward={true}
+                  clickEventForward={false}
                   onFlip={onFlip}
                   className="nie-flip-book"
                   style={{ margin: "0 auto" }}
@@ -697,7 +602,7 @@ function PDFViewer() {
                       <FlipPDFPage
                         key={`flip-page-${index + 1}`}
                         pageNumber={index + 1}
-                        width={renderedPageWidth}
+                        width={pageWidth}
                       />
                     )
                   )}
@@ -711,8 +616,8 @@ function PDFViewer() {
         {!loading && !error && numPages > 0 && (
           <p className="pdf-reader-hint">
             {isMobile
-              ? "Swipe or use the arrows to turn pages"
-              : "Drag a page corner or use the arrows to turn pages"}
+              ? "Use the navigation arrows to turn pages"
+              : "Use the navigation arrows or keyboard arrow keys to turn pages"}
           </p>
         )}
       </main>
