@@ -143,7 +143,7 @@
 }
 
 /* ==========================================
-   TOOLBAR
+   SIMPLE PAGE NAVIGATION TOOLBAR
 ========================================== */
 
 .pdf-toolbar {
@@ -191,7 +191,6 @@
   cursor: not-allowed;
 }
 
-.pdf-zoom-value,
 .pdf-page-count {
   min-width: 58px;
   color: #344256;
@@ -200,7 +199,6 @@
   text-align: center;
 }
 
-.pdf-fit-button,
 .pdf-fullscreen-button {
   font-size: 13px;
   font-weight: 600;
@@ -236,10 +234,6 @@
   border-radius: 12px;
   background: transparent;
 }
-
-/* Desktop two-page layout is controlled by
-   HTMLFlipBook usePortrait={false}.
-*/
 
 /* ==========================================
    FLIP BOOK
@@ -462,7 +456,6 @@
     padding: 0 7px;
   }
 
-  .pdf-fit-button span,
   .pdf-fullscreen-button span {
     display: none;
   }
@@ -509,7 +502,7 @@
   -webkit-user-drag: none;
 }
 
-/* Navigation buttons remain interactive */
+/* Navigation buttons */
 
 .pdf-page-navigation button {
   pointer-events: auto;
