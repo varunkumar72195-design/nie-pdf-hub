@@ -1,6 +1,5 @@
 
 import {
-  memo,
   useCallback,
   useEffect,
   useRef,
@@ -27,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Expand,
+  RefreshCw,
 } from "lucide-react";
 
 import StudentNavbar from "../components/StudentNavbar";
@@ -91,7 +91,7 @@ function formatFileSize(bytes) {
   return `${(size / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-// PAGE COMPONENT REQUIRED BY REACT-PAGEFLIP
+// INDIVIDUAL FLIP BOOK PAGE
 const FlipPDFPage = forwardRef(function FlipPDFPage(
   { pageNumber, width },
   ref
@@ -110,7 +110,7 @@ const FlipPDFPage = forwardRef(function FlipPDFPage(
           renderAnnotationLayer={false}
           loading={
             <div className="flip-pdf-placeholder">
-              <LoaderCircle size={22} />
+              <LoaderCircle size={22} className="pdf-spin" />
               <span>Loading page {pageNumber}...</span>
             </div>
           }
@@ -139,6 +139,7 @@ function PDFViewer() {
   const viewerRef = useRef(null);
   const bookContainerRef = useRef(null);
   const bookRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   const [pdfUrl, setPdfUrl] = useState("");
   const [fileName, setFileName] = useState("Study Material.pdf");
@@ -154,11 +155,88 @@ function PDFViewer() {
   const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const [containerWidth, setContainerWidth] = useState(900);
+  // Start with the actual viewport size to avoid an incorrect
+  // desktop layout on the first mobile render.
+  const [containerWidth, setContainerWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      return Math.max(200, window.innerWidth - 40);
+    }
+
+    return 900;
+  });
+
+  const [pdfVersion, setPdfVersion] = useState(0);
 
   const isMobile = containerWidth <= 700;
 
-  // MEASURE AVAILABLE BOOK WIDTH
+  // FETCH OR RELOAD SIGNED PDF URL
+  const loadPDF = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
+    try {
+      setLoading(true);
+      setError("");
+      setPdfUrl("");
+      setNumPages(0);
+      setCurrentPage(1);
+      setZoom(1);
+
+      const response = await API.get(
+        `/materials/${materialId}/view`,
+        {
+          headers: getAnalyticsHeaders(),
+        }
+      );
+
+      const signedUrl = response.data?.url;
+
+      if (
+        !signedUrl ||
+        typeof signedUrl !== "string" ||
+        !signedUrl.startsWith("https://")
+      ) {
+        throw new Error("Invalid signed PDF URL");
+      }
+
+      if (requestId !== requestIdRef.current) return;
+
+      setFileName(
+        response.data?.file_name ||
+          response.data?.filename ||
+          "Study Material.pdf"
+      );
+
+      setFileSize(
+        response.data?.file_size ??
+          response.data?.size ??
+          null
+      );
+
+      setPdfUrl(signedUrl);
+      setPdfVersion((previous) => previous + 1);
+    } catch (err) {
+      console.error("PDF URL loading failed:", err);
+
+      if (requestId === requestIdRef.current) {
+        setError("Unable to load this PDF. Please try again.");
+      }
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [materialId]);
+
+  // INITIAL LOAD AND MATERIAL CHANGE
+  useEffect(() => {
+    loadPDF();
+
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [loadPDF]);
+
+  // MEASURE BOOK CONTAINER
   useEffect(() => {
     const element = bookContainerRef.current;
 
@@ -187,7 +265,7 @@ function PDFViewer() {
     return () => {
       window.removeEventListener("resize", updateWidth);
     };
-  }, [pdfUrl, isFullscreen, loading]);
+  }, [isFullscreen, loading]);
 
   // FULLSCREEN STATE
   useEffect(() => {
@@ -210,73 +288,6 @@ function PDFViewer() {
     };
   }, []);
 
-  // FETCH SIGNED PDF URL
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadPDF() {
-      try {
-        setLoading(true);
-        setError("");
-        setPdfUrl("");
-        setNumPages(0);
-        setCurrentPage(1);
-        setZoom(1);
-
-        const response = await API.get(
-          `/materials/${materialId}/view`,
-          {
-            headers: getAnalyticsHeaders(),
-          }
-        );
-
-        const signedUrl = response.data?.url;
-
-        if (
-          !signedUrl ||
-          typeof signedUrl !== "string" ||
-          !signedUrl.startsWith("https://")
-        ) {
-          throw new Error("Invalid signed PDF URL");
-        }
-
-        if (!cancelled) {
-          setPdfUrl(signedUrl);
-
-          setFileName(
-            response.data?.file_name ||
-            response.data?.filename ||
-            "Study Material.pdf"
-          );
-
-          setFileSize(
-            response.data?.file_size ??
-            response.data?.size ??
-            null
-          );
-        }
-      } catch (err) {
-        console.error("PDF URL loading failed:", err);
-
-        if (!cancelled) {
-          setError(
-            "Unable to load this PDF. Please try again."
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadPDF();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [materialId]);
-
   // PDF LOAD SUCCESS
   const onDocumentLoadSuccess = useCallback(({ numPages }) => {
     setNumPages(numPages);
@@ -285,28 +296,27 @@ function PDFViewer() {
   }, []);
 
   // PDF LOAD ERROR
-  function onDocumentLoadError(err) {
+  const onDocumentLoadError = useCallback((err) => {
     console.error("PDF rendering failed:", err);
 
     setError(
-      "Unable to display this PDF. Please try again."
+      "Unable to display this PDF. Check your connection and reload."
     );
-  }
+  }, []);
 
   // PAGE FLIP EVENT
   const onFlip = useCallback((event) => {
-    // React PageFlip page indexes start at zero.
     setCurrentPage(event.data + 1);
   }, []);
 
-  // PAGE FLIP NAVIGATION
-  function previousPage() {
+  // PAGE NAVIGATION
+  const previousPage = useCallback(() => {
     bookRef.current?.pageFlip()?.flipPrev();
-  }
+  }, []);
 
-  function nextPage() {
+  const nextPage = useCallback(() => {
     bookRef.current?.pageFlip()?.flipNext();
-  }
+  }, []);
 
   // ZOOM CONTROLS
   function zoomIn() {
@@ -332,9 +342,13 @@ function PDFViewer() {
   // KEYBOARD NAVIGATION
   useEffect(() => {
     function handleKeyDown(event) {
+      const target = event.target;
+
       if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable
       ) {
         return;
       }
@@ -353,7 +367,7 @@ function PDFViewer() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  });
+  }, [nextPage, previousPage]);
 
   // FULLSCREEN
   async function toggleFullscreen() {
@@ -411,27 +425,25 @@ function PDFViewer() {
       link.click();
       document.body.removeChild(link);
 
-      setTimeout(() => {
+      window.setTimeout(() => {
         URL.revokeObjectURL(downloadUrl);
       }, 3000);
     } catch (err) {
       console.error("PDF download failed:", err);
 
-      alert(
-        "Unable to download this PDF. Please try again."
-      );
+      alert("Unable to download this PDF. Please try again.");
     } finally {
       setDownloading(false);
     }
   }
 
-  // BOOK DIMENSIONS
+  // RESPONSIVE PAGE DIMENSIONS
   const availablePageWidth = isMobile
-    ? containerWidth - 24
+    ? containerWidth - 16
     : (containerWidth - 40) / 2;
 
   const pageWidth = Math.max(
-    240,
+    160,
     Math.min(availablePageWidth, 480)
   );
 
@@ -439,7 +451,7 @@ function PDFViewer() {
 
   const renderedPageWidth = Math.round(pageWidth * zoom);
 
-  // FLIPBOOK NAVIGATION LABEL
+  // PAGE COUNTER
   const lastVisiblePage = isMobile
     ? currentPage
     : Math.min(currentPage + 1, numPages);
@@ -497,7 +509,7 @@ function PDFViewer() {
           </button>
         </div>
 
-        {/* READER TOOLBAR */}
+        {/* TOOLBAR */}
         {!loading && !error && pdfUrl && numPages > 0 && (
           <div className="pdf-toolbar">
             <div className="pdf-toolbar-group">
@@ -594,27 +606,38 @@ function PDFViewer() {
           </div>
         )}
 
-        {/* BOOK AREA */}
+        {/* PDF BOOK AREA */}
         <div
           ref={bookContainerRef}
           className="pdf-book-container"
         >
           {loading && (
             <div className="pdf-loading">
-              <LoaderCircle size={30} />
-              <p>Preparing PDF link...</p>
+              <LoaderCircle size={30} className="pdf-spin" />
+              <p>Preparing PDF...</p>
             </div>
           )}
 
           {error && (
             <div className="pdf-error">
               <AlertCircle size={25} />
+
               <p>{error}</p>
+
+              <button
+                type="button"
+                onClick={loadPDF}
+                className="pdf-download-button"
+              >
+                <RefreshCw size={17} />
+                Reload PDF
+              </button>
             </div>
           )}
 
           {!loading && !error && pdfUrl && (
             <Document
+              key={`${materialId}-${pdfVersion}`}
               file={{ url: pdfUrl }}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
@@ -624,31 +647,39 @@ function PDFViewer() {
               }}
               loading={
                 <div className="pdf-loading">
-                  <LoaderCircle size={30} />
+                  <LoaderCircle size={30} className="pdf-spin" />
                   <p>Loading PDF document...</p>
                 </div>
               }
               error={
                 <div className="pdf-error">
                   Unable to render this PDF.
+                  <button
+                    type="button"
+                    onClick={loadPDF}
+                    className="pdf-download-button"
+                  >
+                    <RefreshCw size={17} />
+                    Reload PDF
+                  </button>
                 </div>
               }
             >
               {numPages > 0 && (
                 <HTMLFlipBook
                   ref={bookRef}
-                  key={`${materialId}-${isMobile ? "mobile" : "desktop"}`}
+                  key={`${materialId}-${pdfVersion}-${isMobile ? "mobile" : "desktop"}`}
                   width={pageWidth}
                   height={pageHeight}
                   size="fixed"
-                  minWidth={240}
+                  minWidth={160}
                   maxWidth={480}
-                  minHeight={340}
+                  minHeight={226}
                   maxHeight={680}
                   drawShadow={true}
                   flippingTime={900}
-usePortrait={isMobile}
-                    startPage={0}
+                  usePortrait={isMobile}
+                  startPage={0}
                   autoSize={true}
                   maxShadowOpacity={0.45}
                   showCover={false}
@@ -679,7 +710,9 @@ usePortrait={isMobile}
         {/* READER HINT */}
         {!loading && !error && numPages > 0 && (
           <p className="pdf-reader-hint">
-            Drag a page corner or use the arrows to turn pages
+            {isMobile
+              ? "Swipe or use the arrows to turn pages"
+              : "Drag a page corner or use the arrows to turn pages"}
           </p>
         )}
       </main>
