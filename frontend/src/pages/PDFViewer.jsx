@@ -17,7 +17,6 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
-  File,
   Expand,
 } from "lucide-react";
 
@@ -88,7 +87,7 @@ const LazyPDFPage = memo(function LazyPDFPage({
   width,
 }) {
   const [shouldRender, setShouldRender] = useState(
-    pageNumber === 1
+    pageNumber <= 2
   );
 
   const [container, setContainer] = useState(null);
@@ -163,6 +162,7 @@ function PDFViewer() {
   } = useParams();
 
   const viewerRef = useRef(null);
+  const pdfContainerRef = useRef(null);
 
   const [pdfUrl, setPdfUrl] = useState("");
   const [fileName, setFileName] = useState("Study Material.pdf");
@@ -178,14 +178,34 @@ function PDFViewer() {
   const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const [containerWidth, setContainerWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 800
-  );
+  // Actual PDF viewer width, not browser window width.
+  const [containerWidth, setContainerWidth] = useState(800);
 
-  // RESPONSIVE WIDTH
+  const isMobile = containerWidth <= 700;
+  const pageStep = isMobile ? 1 : 2;
+
+  // MEASURE ACTUAL PDF CONTAINER WIDTH
   useEffect(() => {
+    const element = pdfContainerRef.current;
+
+    if (!element) return;
+
     function updateWidth() {
-      setContainerWidth(window.innerWidth);
+      const width = element.clientWidth;
+
+      if (width > 0) {
+        setContainerWidth(width);
+      }
+    }
+
+    updateWidth();
+
+    if ("ResizeObserver" in window) {
+      const resizeObserver = new ResizeObserver(updateWidth);
+
+      resizeObserver.observe(element);
+
+      return () => resizeObserver.disconnect();
     }
 
     window.addEventListener("resize", updateWidth);
@@ -193,7 +213,7 @@ function PDFViewer() {
     return () => {
       window.removeEventListener("resize", updateWidth);
     };
-  }, []);
+  }, [pdfUrl, isFullscreen]);
 
   // FULLSCREEN STATE
   useEffect(() => {
@@ -299,7 +319,7 @@ function PDFViewer() {
     );
   }
 
-  // TRACK VISIBLE PAGE WHILE SCROLLING
+  // TRACK CURRENT SPREAD WHILE SCROLLING
   useEffect(() => {
     if (!numPages) return;
 
@@ -325,7 +345,11 @@ function PDFViewer() {
           );
 
           if (pageNumber) {
-            setCurrentPage(pageNumber);
+            const spreadStart = isMobile
+              ? pageNumber
+              : Math.floor((pageNumber - 1) / 2) * 2 + 1;
+
+            setCurrentPage(spreadStart);
           }
         }
       },
@@ -339,14 +363,20 @@ function PDFViewer() {
     });
 
     return () => observer.disconnect();
-  }, [numPages, pdfUrl]);
+  }, [numPages, pdfUrl, isMobile]);
 
-  // PAGE NAVIGATION
+  // GO TO PAGE OR SPREAD
   function goToPage(page) {
-    const targetPage = Math.max(
+    if (!numPages) return;
+
+    const safePage = Math.max(
       1,
       Math.min(numPages, Number(page) || 1)
     );
+
+    const targetPage = isMobile
+      ? safePage
+      : Math.floor((safePage - 1) / 2) * 2 + 1;
 
     setCurrentPage(targetPage);
 
@@ -356,6 +386,15 @@ function PDFViewer() {
         behavior: "smooth",
         block: "start",
       });
+  }
+
+  // PREVIOUS AND NEXT SPREAD
+  function previousSpread() {
+    goToPage(currentPage - pageStep);
+  }
+
+  function nextSpread() {
+    goToPage(currentPage + pageStep);
   }
 
   // ZOOM CONTROLS
@@ -449,13 +488,17 @@ function PDFViewer() {
     }
   }
 
-  // PDF RESPONSIVE WIDTH
-  const basePdfWidth = Math.max(
-    250,
-    Math.min(containerWidth - 64, 900)
+  // FIXED WIDTH CALCULATION
+  const availableWidth = Math.max(
+    240,
+    containerWidth - 24
   );
 
-  const pdfWidth = Math.round(basePdfWidth * zoom);
+  const singlePageWidth = isMobile
+    ? availableWidth
+    : Math.max(200, (availableWidth - 20) / 2);
+
+  const pdfWidth = Math.round(singlePageWidth * zoom);
 
   return (
     <div className="pdf-viewer-page">
@@ -558,32 +601,39 @@ function PDFViewer() {
               </button>
             </div>
 
+            {/* SPREAD NAVIGATION */}
             <div className="pdf-toolbar-group pdf-page-navigation">
               <button
                 type="button"
-                onClick={() => goToPage(currentPage - 1)}
+                onClick={previousSpread}
                 disabled={currentPage <= 1}
-                title="Previous page"
+                title="Previous spread"
                 className="pdf-tool-button"
               >
                 <ChevronLeft size={19} />
               </button>
 
               <span className="pdf-page-count">
-                {currentPage} / {numPages}
+                {isMobile
+                  ? `${currentPage} / ${numPages}`
+                  : `${currentPage}-${Math.min(
+                      currentPage + 1,
+                      numPages
+                    )} / ${numPages}`}
               </span>
 
               <button
                 type="button"
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage >= numPages}
-                title="Next page"
+                onClick={nextSpread}
+                disabled={currentPage + pageStep > numPages}
+                title="Next spread"
                 className="pdf-tool-button"
               >
                 <ChevronRight size={19} />
               </button>
             </div>
 
+            {/* FULLSCREEN */}
             <button
               type="button"
               onClick={toggleFullscreen}
@@ -624,7 +674,10 @@ function PDFViewer() {
           )}
 
           {!loading && !error && pdfUrl && (
-            <div className="pdf-pages-container">
+            <div
+              ref={pdfContainerRef}
+              className="pdf-pages-container"
+            >
               <Document
                 file={{ url: pdfUrl }}
                 onLoadSuccess={onDocumentLoadSuccess}
