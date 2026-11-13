@@ -1,9 +1,7 @@
 
 import logging
-import mimetypes
 import uuid
 from pathlib import PurePosixPath
-from urllib.parse import quote
 
 from fastapi import (
     APIRouter,
@@ -16,7 +14,6 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import Response
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -30,7 +27,12 @@ from app.models.semester import Semester
 from app.models.academic_year import AcademicYear
 from app.models.department import Department
 from app.schemas.material import MaterialResponse
-from app.storage import upload_file, download_file, delete_file
+
+from app.storage import (
+    upload_file,
+    delete_file,
+    create_file_signed_url,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -72,9 +74,7 @@ def validate_file_content(
         return file_bytes.startswith(b"\xff\xd8\xff")
 
     if extension == ".png":
-        return file_bytes.startswith(
-            b"\x89PNG\r\n\x1a\n"
-        )
+        return file_bytes.startswith(b"\x89PNG\r\n\x1a\n")
 
     if extension == ".webp":
         return (
@@ -169,10 +169,12 @@ def generate_storage_path(extension: str) -> str:
 # --------------------------------------------------
 
 def is_cloud_storage_path(file_path: str) -> bool:
+
     if not file_path:
         return False
 
     path = PurePosixPath(file_path)
+
     return (
         len(path.parts) == 2
         and path.parts[0] == "materials"
@@ -185,6 +187,7 @@ def is_cloud_storage_path(file_path: str) -> bool:
 # --------------------------------------------------
 
 def remove_stored_file(file_path: str):
+
     if not is_cloud_storage_path(file_path):
         logger.error(
             "Refusing to delete invalid cloud path: %s",
@@ -194,6 +197,7 @@ def remove_stored_file(file_path: str):
 
     try:
         delete_file(file_path)
+
     except Exception:
         logger.exception(
             "Could not delete Supabase object: %s",
@@ -202,31 +206,38 @@ def remove_stored_file(file_path: str):
 
 
 # --------------------------------------------------
-# HELPER: DOWNLOAD FILE CONTENT FROM SUPABASE
+# HELPER: GENERATE SIGNED FILE URL
 # --------------------------------------------------
 
-def get_file_content(material: Material):
+def get_signed_file_url(material: Material):
+
     if not is_cloud_storage_path(material.file_path):
         logger.error(
             "Invalid Supabase object path for material %s: %s",
             material.id,
             material.file_path
         )
+
         raise HTTPException(
             status_code=500,
             detail="Material has an invalid cloud storage path"
         )
 
     try:
-        return download_file(material.file_path)
+        return create_file_signed_url(
+            material.file_path,
+            expires_in=3600
+        )
+
     except Exception:
         logger.exception(
-            "Supabase download failed for material %s",
+            "Could not generate signed URL for material %s",
             material.id
         )
+
         raise HTTPException(
-            status_code=404,
-            detail="Stored file could not be retrieved from cloud storage"
+            status_code=502,
+            detail="Unable to access the stored file"
         )
 
 
@@ -240,7 +251,7 @@ def record_pdf_analytics(
     material: Material,
     event_type: str
 ):
-    # Only count actual PDF files.
+
     extension = PurePosixPath(
         material.file_name or ""
     ).suffix.lower()
@@ -273,6 +284,7 @@ def record_pdf_analytics(
 
     except Exception:
         db.rollback()
+
         logger.exception(
             "Could not record %s analytics for material %s",
             event_type,
@@ -390,6 +402,7 @@ async def upload_material(
         if cloud_uploaded and storage_path:
             try:
                 delete_file(storage_path)
+
             except Exception:
                 logger.exception(
                     "Could not clean up failed upload: %s",
@@ -466,14 +479,8 @@ def view_material(
         db
     )
 
-    content_type = (
-        mimetypes.guess_type(material.file_name)[0]
-        or "application/octet-stream"
-    )
+    signed_url = get_signed_file_url(material)
 
-    file_bytes = get_file_content(material)
-
-    # Record only after successful file retrieval.
     record_pdf_analytics(
         db,
         request,
@@ -481,18 +488,11 @@ def view_material(
         "pdf_view"
     )
 
-    encoded_name = quote(material.file_name)
-
-    return Response(
-        content=file_bytes,
-        media_type=content_type,
-        headers={
-            "Content-Disposition": (
-                f"inline; filename*=UTF-8''{encoded_name}"
-            ),
-            "X-Content-Type-Options": "nosniff"
-        }
-    )
+    return {
+        "url": signed_url,
+        "file_name": material.file_name,
+        "file_size": material.file_size
+    }
 
 
 # --------------------------------------------------
@@ -512,14 +512,8 @@ def download_material(
         db
     )
 
-    content_type = (
-        mimetypes.guess_type(material.file_name)[0]
-        or "application/octet-stream"
-    )
+    signed_url = get_signed_file_url(material)
 
-    file_bytes = get_file_content(material)
-
-    # Record after successful file retrieval.
     record_pdf_analytics(
         db,
         request,
@@ -527,18 +521,10 @@ def download_material(
         "pdf_download"
     )
 
-    encoded_name = quote(material.file_name)
-
-    return Response(
-        content=file_bytes,
-        media_type=content_type,
-        headers={
-            "Content-Disposition": (
-                f"attachment; filename*=UTF-8''{encoded_name}"
-            ),
-            "X-Content-Type-Options": "nosniff"
-        }
-    )
+    return {
+        "url": signed_url,
+        "file_name": material.file_name
+    }
 
 
 # --------------------------------------------------
@@ -627,6 +613,7 @@ async def update_material(
         if cloud_uploaded and new_storage_path:
             try:
                 delete_file(new_storage_path)
+
             except Exception:
                 logger.exception(
                     "Could not clean up replacement upload: %s",
@@ -663,7 +650,6 @@ def delete_material(
     old_file_path = material.file_path
 
     try:
-
         db.delete(material)
         db.commit()
 
@@ -835,3 +821,4 @@ def search_portal_materials(
         get_material_summary(*row)
         for row in matching_rows
     ]
+    

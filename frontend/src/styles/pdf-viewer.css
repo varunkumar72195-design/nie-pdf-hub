@@ -309,3 +309,39 @@
     gap: 15px;
   }
 }
+
+.pdf-page-placeholder {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #ffffff;
+  color: #64748b;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.pdf-page-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.pdf-page-wrapper canvas {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+}
+
+.pdf-page-placeholder svg {
+  animation: pdf-spin 1s linear infinite;
+}
+
+@keyframes pdf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
