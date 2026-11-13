@@ -1,5 +1,10 @@
 
-import { Routes, Route } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+} from "react-router-dom";
 
 // Analytics
 import PageViewTracker from "./components/PageViewTracker";
@@ -26,6 +31,18 @@ import SubjectManagement from "./pages/SubjectManagement";
 import MaterialManagement from "./pages/MaterialManagement";
 import AdminSettings from "./pages/AdminSettings";
 
+// REDIRECT OLD ACADEMIC YEAR URL
+function LegacyYearsRedirect() {
+  const { departmentId } = useParams();
+
+  return (
+    <Navigate
+      to={`/departments/${departmentId}/regulations`}
+      replace
+    />
+  );
+}
+
 function App() {
   return (
     <>
@@ -38,6 +55,12 @@ function App() {
         <Route
           path="/departments"
           element={<Departments />}
+        />
+
+        {/* OLD URL REDIRECT */}
+        <Route
+          path="/departments/:departmentId/years"
+          element={<LegacyYearsRedirect />}
         />
 
         {/* STUDENT REGULATIONS */}
@@ -85,7 +108,10 @@ function App() {
         {/* ADMIN LAYOUT */}
         <Route path="/admin" element={<AdminLayout />}>
 
-          <Route index element={<AdminDashboard />} />
+          <Route
+            index
+            element={<AdminDashboard />}
+          />
 
           <Route
             path="dashboard"
