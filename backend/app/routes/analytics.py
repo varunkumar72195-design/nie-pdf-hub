@@ -191,3 +191,48 @@ def get_analytics_activity(
             activity[date_key]["pdf_downloads"] = row.event_count
 
     return list(activity.values())
+
+# ==========================================
+# ADMIN: MOST VIEWED PDFs
+# ==========================================
+
+@router.get("/top-views")
+def get_top_views(
+    db: Session = Depends(get_db),
+    admin: Admin = Depends(get_current_admin)
+):
+    results = (
+        db.query(
+            Material.id,
+            Material.title,
+            Material.file_name,
+            func.count(AnalyticsEvent.id).label("view_count")
+        )
+        .join(
+            AnalyticsEvent,
+            AnalyticsEvent.material_id == Material.id
+        )
+        .filter(
+            AnalyticsEvent.event_type == "pdf_view"
+        )
+        .group_by(
+            Material.id,
+            Material.title,
+            Material.file_name
+        )
+        .order_by(
+            desc("view_count")
+        )
+        .limit(5)
+        .all()
+    )
+
+    return [
+        {
+            "material_id": row.id,
+            "title": row.title,
+            "file_name": row.file_name,
+            "views": row.view_count
+        }
+        for row in results
+    ]

@@ -14,6 +14,9 @@ import {
   Cloud,
   HardDrive,
   LogOut,
+  Users,
+  Activity,
+  TrendingUp,
 } from "lucide-react";
 
 import API from "../services/api";
@@ -38,7 +41,7 @@ function formatFileSize(bytes) {
   return `${value.toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
 }
 
-// CONVERT A FILE SIZE STRING INTO BYTES
+// CONVERT FILE SIZE STRING INTO BYTES
 function parseFileSize(value) {
   if (value === null || value === undefined || value === "") {
     return 0;
@@ -87,6 +90,11 @@ function formatDate(date) {
   });
 }
 
+// FORMAT NUMBER
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString("en-IN");
+}
+
 // BUILD PDF URL
 function getFileUrl(url) {
   if (!url) return "#";
@@ -129,18 +137,176 @@ function getErrorMessage(error) {
   );
 }
 
+// ANALYTICS CARD
+function AnalyticsCard({ icon: Icon, title, value, description }) {
+  return (
+    <div className="analytics-stat-card">
+      <div className="analytics-stat-icon">
+        <Icon size={23} />
+      </div>
+
+      <div className="analytics-stat-info">
+        <p>{title}</p>
+        <h2>{formatNumber(value)}</h2>
+        <span>{description}</span>
+      </div>
+    </div>
+  );
+}
+
+// ACTIVITY CHART
+function ActivityChart({ activity }) {
+  const maxValue = Math.max(
+    1,
+    ...activity.flatMap((item) => [
+      Number(item.page_views || 0),
+      Number(item.pdf_views || 0),
+      Number(item.pdf_downloads || 0),
+    ])
+  );
+
+  if (!activity.length) {
+    return (
+      <div className="analytics-empty">
+        <Activity size={32} />
+        <p>No activity recorded in the selected period.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="analytics-chart-container">
+      <div className="analytics-chart-legend">
+        <span>
+          <i className="legend-page-views" />
+          Page Views
+        </span>
+
+        <span>
+          <i className="legend-pdf-views" />
+          PDF Views
+        </span>
+
+        <span>
+          <i className="legend-downloads" />
+          Downloads
+        </span>
+      </div>
+
+      <div className="analytics-chart">
+        {activity.map((item) => {
+          const pageViews = Number(item.page_views || 0);
+          const pdfViews = Number(item.pdf_views || 0);
+          const downloads = Number(item.pdf_downloads || 0);
+
+          return (
+            <div
+              className="analytics-chart-day"
+              key={item.date}
+              title={`${item.date}
+Page views: ${pageViews}
+PDF views: ${pdfViews}
+Downloads: ${downloads}`}
+            >
+              <div className="analytics-chart-bars">
+                <div
+                  className="analytics-bar page-views-bar"
+                  style={{
+                    height: `${(pageViews / maxValue) * 100}%`,
+                  }}
+                />
+
+                <div
+                  className="analytics-bar pdf-views-bar"
+                  style={{
+                    height: `${(pdfViews / maxValue) * 100}%`,
+                  }}
+                />
+
+                <div
+                  className="analytics-bar downloads-bar"
+                  style={{
+                    height: `${(downloads / maxValue) * 100}%`,
+                  }}
+                />
+              </div>
+
+              <span>
+                {new Date(`${item.date}T00:00:00`).toLocaleDateString(
+                  "en-IN",
+                  { day: "2-digit", month: "short" }
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// TOP PDF LIST
+function TopPdfList({ items, type }) {
+  if (!items.length) {
+    return (
+      <div className="analytics-empty">
+        <FileText size={28} />
+        <p>No PDF activity recorded yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="top-pdf-list">
+      {items.map((item, index) => (
+        <div className="top-pdf-item" key={item.material_id}>
+          <div className="top-pdf-rank">
+            {index + 1}
+          </div>
+
+          <div className="top-pdf-info">
+            <h4>{item.title || "Untitled PDF"}</h4>
+            <p>{item.file_name || "Unknown file"}</p>
+          </div>
+
+          <div className="top-pdf-count">
+            <strong>
+              {formatNumber(
+                type === "views" ? item.views : item.downloads
+              )}
+            </strong>
+
+            <span>
+              {type === "views" ? "Views" : "Downloads"}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AdminDashboard() {
   const navigate = useNavigate();
 
   const [dashboard, setDashboard] = useState(null);
   const [storage, setStorage] = useState(null);
 
+  // ANALYTICS STATES
+  const [analytics, setAnalytics] = useState(null);
+  const [activity, setActivity] = useState([]);
+  const [topViews, setTopViews] = useState([]);
+  const [topDownloads, setTopDownloads] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [storageLoading, setStorageLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const [error, setError] = useState("");
   const [storageError, setStorageError] = useState("");
+  const [analyticsError, setAnalyticsError] = useState("");
 
   // LOGOUT
   const handleLogout = () => {
@@ -202,21 +368,65 @@ function AdminDashboard() {
     }
   };
 
-  // REFRESH
+  // FETCH ANALYTICS
+  const fetchAnalytics = async () => {
+    try {
+      setAnalyticsError("");
+
+      const [
+        summaryResponse,
+        activityResponse,
+        viewsResponse,
+        downloadsResponse,
+      ] = await Promise.all([
+        API.get("/analytics/summary", {
+          requiresAuth: true,
+        }),
+
+        API.get("/analytics/activity?days=30", {
+          requiresAuth: true,
+        }),
+
+        API.get("/analytics/top-views", {
+          requiresAuth: true,
+        }),
+
+        API.get("/analytics/top-downloads", {
+          requiresAuth: true,
+        }),
+      ]);
+
+      setAnalytics(summaryResponse.data);
+      setActivity(activityResponse.data);
+      setTopViews(viewsResponse.data);
+      setTopDownloads(downloadsResponse.data);
+    } catch (err) {
+      if (handleAuthError(err)) return;
+
+      setAnalyticsError(getErrorMessage(err));
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  // REFRESH ALL DASHBOARD DATA
   const refreshDashboard = async () => {
     setRefreshing(true);
 
     await Promise.all([
       fetchDashboard(),
       fetchStorage(),
+      fetchAnalytics(),
     ]);
 
     setRefreshing(false);
   };
 
+  // INITIAL DATA FETCH
   useEffect(() => {
     fetchDashboard();
     fetchStorage();
+    fetchAnalytics();
   }, []);
 
   // LOADING SCREEN
@@ -285,14 +495,11 @@ function AdminDashboard() {
     totalMaterials;
 
   // TOTAL APPLICATION STORAGE
-  // PostgreSQL database + Supabase PDF storage
   const totalStorageBytes = databaseBytes + bucketBytes;
-
   const totalStorage = formatFileSize(totalStorageBytes);
 
   // STORAGE CAPACITY
   const storageLimit = storage?.storage_limit;
-
   const storageLimitBytes = parseFileSize(storageLimit);
 
   const remainingStorage =
@@ -363,6 +570,149 @@ function AdminDashboard() {
 
       </section>
 
+      {/* ANALYTICS OVERVIEW */}
+
+      <section className="analytics-section">
+
+        <div className="analytics-section-header">
+          <div>
+            <h2>Website Analytics</h2>
+            <p>Monitor student visits and PDF engagement</p>
+          </div>
+
+          <button
+            className="storage-refresh-btn"
+            onClick={refreshDashboard}
+            disabled={refreshing}
+          >
+            <RefreshCw
+              size={16}
+              className={refreshing ? "loading-spinner" : ""}
+            />
+
+            {refreshing ? "Refreshing..." : "Refresh Analytics"}
+          </button>
+        </div>
+
+        {analyticsLoading ? (
+          <div className="storage-loading">
+            <RefreshCw size={20} className="loading-spinner" />
+            <span>Loading analytics...</span>
+          </div>
+        ) : analyticsError ? (
+          <div className="storage-error">
+            <p>{analyticsError}</p>
+
+            <button onClick={fetchAnalytics}>
+              <RefreshCw size={15} />
+              Retry Analytics
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* ANALYTICS CARDS */}
+
+            <div className="analytics-stats-grid">
+
+              <AnalyticsCard
+                icon={TrendingUp}
+                title="Total Visits"
+                value={analytics?.total_visits}
+                description="Recorded page visits"
+              />
+
+              <AnalyticsCard
+                icon={Users}
+                title="Unique Visitors"
+                value={analytics?.unique_visitors}
+                description="Distinct visitor IDs"
+              />
+
+              <AnalyticsCard
+                icon={Eye}
+                title="PDF Views"
+                value={analytics?.pdf_views}
+                description="Total PDF views"
+              />
+
+              <AnalyticsCard
+                icon={Download}
+                title="PDF Downloads"
+                value={analytics?.pdf_downloads}
+                description="Total PDF downloads"
+              />
+
+            </div>
+
+            {/* ACTIVITY CHART */}
+
+            <div className="analytics-panel">
+
+              <div className="analytics-panel-header">
+                <div>
+                  <h3>
+                    <Activity size={19} />
+                    Website Activity
+                  </h3>
+
+                  <p>Daily activity during the last 30 days</p>
+                </div>
+              </div>
+
+              <ActivityChart activity={activity} />
+
+            </div>
+
+            {/* TOP PDF TABLES */}
+
+            <div className="analytics-top-grid">
+
+              <div className="analytics-panel">
+
+                <div className="analytics-panel-header">
+                  <div>
+                    <h3>
+                      <Eye size={19} />
+                      Most Viewed PDFs
+                    </h3>
+
+                    <p>Top 5 popular study materials</p>
+                  </div>
+                </div>
+
+                <TopPdfList
+                  items={topViews}
+                  type="views"
+                />
+
+              </div>
+
+              <div className="analytics-panel">
+
+                <div className="analytics-panel-header">
+                  <div>
+                    <h3>
+                      <Download size={19} />
+                      Most Downloaded PDFs
+                    </h3>
+
+                    <p>Top 5 downloaded study materials</p>
+                  </div>
+                </div>
+
+                <TopPdfList
+                  items={topDownloads}
+                  type="downloads"
+                />
+
+              </div>
+
+            </div>
+          </>
+        )}
+
+      </section>
+
       {/* STORAGE OVERVIEW */}
 
       <section className="storage-section">
@@ -382,6 +732,7 @@ function AdminDashboard() {
               size={16}
               className={refreshing ? "loading-spinner" : ""}
             />
+
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
         </div>
@@ -394,6 +745,7 @@ function AdminDashboard() {
         ) : storageError ? (
           <div className="storage-error">
             <p>{storageError}</p>
+
             <button onClick={fetchStorage}>
               <RefreshCw size={15} />
               Retry
@@ -534,17 +886,9 @@ function AdminDashboard() {
             {/* STORAGE SUMMARY */}
 
             <div className="storage-summary">
-              <span>
-                Database: {databaseSize}
-              </span>
-
-              <span>
-                Supabase PDFs: {storageUsed}
-              </span>
-
-              <span>
-                Total: {totalStorage}
-              </span>
+              <span>Database: {databaseSize}</span>
+              <span>Supabase PDFs: {storageUsed}</span>
+              <span>Total: {totalStorage}</span>
             </div>
 
           </>
@@ -590,6 +934,7 @@ function AdminDashboard() {
                     <td>
                       <div className="recent-file-title">
                         <FileText size={18} />
+
                         <span>
                           {material.title || "Untitled PDF"}
                         </span>
