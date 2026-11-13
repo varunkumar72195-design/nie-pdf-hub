@@ -647,8 +647,8 @@ function PDFViewer() {
                   maxHeight={680}
                   drawShadow={true}
                   flippingTime={900}
-                  usePortrait={true}
-                  startPage={0}
+usePortrait={isMobile}
+                    startPage={0}
                   autoSize={true}
                   maxShadowOpacity={0.45}
                   showCover={false}

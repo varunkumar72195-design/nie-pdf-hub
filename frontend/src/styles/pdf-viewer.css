@@ -1,6 +1,7 @@
+
 /* ==========================================
    NIE PDF HUB - PDF VIEWER
-   Clean stylesheet for the 3D page-flip reader
+   Horizontal 3D Book Page Flip Reader
 ========================================== */
 
 * {
@@ -13,7 +14,7 @@
   color: #172033;
 }
 
-/* Header */
+/* HEADER */
 .pdf-viewer-header {
   min-height: 72px;
   padding: 0 6%;
@@ -54,7 +55,7 @@
   transform: translateX(-3px);
 }
 
-/* Main layout */
+/* MAIN LAYOUT */
 .pdf-viewer-container {
   width: 100%;
   max-width: 1250px;
@@ -103,7 +104,7 @@
   font-size: 13px;
 }
 
-/* Download */
+/* DOWNLOAD */
 .pdf-download-button {
   display: inline-flex;
   align-items: center;
@@ -131,7 +132,7 @@
   cursor: not-allowed;
 }
 
-/* Toolbar */
+/* TOOLBAR */
 .pdf-toolbar {
   min-height: 58px;
   padding: 10px 18px;
@@ -191,15 +192,18 @@
   font-weight: 600;
 }
 
-/* 3D page-flip stage */
+/* 3D BOOK STAGE */
 .pdf-frame-container {
   width: 100%;
   min-height: 500px;
-  padding: 12px;
+  padding: 20px 12px;
   overflow: hidden;
   border-radius: 0 0 12px 12px;
-  background:
-    radial-gradient(ellipse at center, #52647e 0%, #334155 72%);
+  background: radial-gradient(
+    ellipse at center,
+    #52647e 0%,
+    #334155 72%
+  );
 }
 
 .pdf-book-container {
@@ -213,15 +217,19 @@
   justify-content: center;
   overflow: hidden;
   border-radius: 12px;
-  background: #e9edf5;
+  background: transparent;
 }
 
+/* IMPORTANT:
+   Desktop two-page layout is controlled by
+   HTMLFlipBook's usePortrait={false}.
+*/
 .nie-flip-book {
-  margin: 0 auto;
+  margin: 0 auto !important;
   max-width: 100%;
 }
 
-/* Each physical page */
+/* INDIVIDUAL PHYSICAL PAGE */
 .flip-pdf-page {
   position: relative;
   width: 100%;
@@ -287,7 +295,7 @@
   text-align: center;
 }
 
-/* Loading and error states */
+/* LOADING AND ERROR */
 .pdf-loading,
 .pdf-error {
   min-height: 250px;
@@ -329,7 +337,7 @@
   }
 }
 
-/* Fullscreen */
+/* FULLSCREEN */
 .pdf-viewer-fullscreen {
   width: 100%;
   height: 100vh;
@@ -338,7 +346,6 @@
   padding: 16px;
   overflow: auto;
   background: #f3f5fa;
-  box-sizing: border-box;
 }
 
 .pdf-viewer-fullscreen .pdf-frame-container {
@@ -350,18 +357,18 @@
   min-height: calc(100vh - 230px);
 }
 
-/* Tablet */
-@media (min-width: 601px) and (max-width: 900px) {
+/* TABLET */
+@media (min-width: 701px) and (max-width: 900px) {
   .pdf-viewer-container {
     padding: 0 15px;
   }
 
   .pdf-frame-container {
-    padding: 8px;
+    padding: 12px 6px;
   }
 }
 
-/* Mobile */
+/* MOBILE */
 @media (max-width: 700px) {
   .pdf-viewer-header {
     min-height: 60px;
@@ -422,7 +429,7 @@
 
   .pdf-frame-container {
     min-height: 380px;
-    padding: 6px;
+    padding: 8px 4px;
   }
 
   .pdf-book-container {
