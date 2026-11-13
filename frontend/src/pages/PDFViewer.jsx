@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 
+import { Document, Page, pdfjs } from "react-pdf";
+
 import {
   ArrowLeft,
   Download,
@@ -12,9 +14,18 @@ import {
 
 import StudentNavbar from "../components/StudentNavbar";
 import API from "../services/api";
-import "../styles/pdf-viewer.css";
 
-// Generate or retrieve the same visitor ID used by PageViewTracker.
+import "../styles/pdf-viewer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+
+// Configure PDF.js worker.
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
+
+// Visitor ID
 function getVisitorId() {
   let visitorId = localStorage.getItem("nie_visitor_id");
 
@@ -26,7 +37,7 @@ function getVisitorId() {
   return visitorId;
 }
 
-// Generate or retrieve the same session ID used by PageViewTracker.
+// Session ID
 function getSessionId() {
   let sessionId = sessionStorage.getItem("nie_session_id");
 
@@ -38,7 +49,7 @@ function getSessionId() {
   return sessionId;
 }
 
-// Headers required by the existing backend analytics helper.
+// Analytics headers
 function getAnalyticsHeaders() {
   return {
     "X-Visitor-ID": getVisitorId(),
@@ -60,7 +71,25 @@ function PDFViewer() {
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
 
-  // Load PDF and record its view.
+  const [numPages, setNumPages] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 800
+  );
+
+  // Responsive width
+  useEffect(() => {
+    function updateWidth() {
+      setContainerWidth(window.innerWidth);
+    }
+
+    window.addEventListener("resize", updateWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateWidth);
+    };
+  }, []);
+
+  // Fetch PDF and record view analytics.
   useEffect(() => {
     let cancelled = false;
     let objectUrl = null;
@@ -69,6 +98,8 @@ function PDFViewer() {
       try {
         setLoading(true);
         setError("");
+        setPdfUrl("");
+        setNumPages(0);
 
         const response = await API.get(
           `/materials/${materialId}/view`,
@@ -77,6 +108,14 @@ function PDFViewer() {
             headers: getAnalyticsHeaders(),
           }
         );
+
+        if (
+          !response.data ||
+          response.data.size === 0 ||
+          response.data.type !== "application/pdf"
+        ) {
+          throw new Error("Invalid PDF response");
+        }
 
         objectUrl = URL.createObjectURL(response.data);
 
@@ -109,7 +148,19 @@ function PDFViewer() {
     };
   }, [materialId]);
 
-  // Download PDF and record its download event.
+  // PDF loaded successfully.
+  function onDocumentLoadSuccess({ numPages }) {
+    setNumPages(numPages);
+    setError("");
+  }
+
+  // PDF rendering error.
+  function onDocumentLoadError(err) {
+    console.error("PDF rendering failed:", err);
+    setError("Unable to display this PDF. Please try again.");
+  }
+
+  // Download PDF and record download analytics.
   async function handleDownload() {
     try {
       setDownloading(true);
@@ -137,8 +188,7 @@ function PDFViewer() {
 
       setTimeout(() => {
         URL.revokeObjectURL(downloadObjectUrl);
-      }, 1000);
-
+      }, 2000);
     } catch (err) {
       console.error("PDF download failed:", err);
       alert("Unable to download this PDF. Please try again.");
@@ -147,9 +197,13 @@ function PDFViewer() {
     }
   }
 
+  const pdfWidth = Math.max(
+    250,
+    Math.min(containerWidth - 32, 900)
+  );
+
   return (
     <div className="pdf-viewer-page">
-
       <StudentNavbar />
 
       <header className="pdf-viewer-header">
@@ -163,15 +217,17 @@ function PDFViewer() {
       </header>
 
       <main className="pdf-viewer-container">
-
         <div className="pdf-document-heading">
-
           <div className="pdf-document-info">
             <FileText size={25} />
 
             <div>
               <h2>Study Material</h2>
-              <p>PDF Document</p>
+              <p>
+                {numPages > 0
+                  ? `${numPages} PDF Pages`
+                  : "PDF Document"}
+              </p>
             </div>
           </div>
 
@@ -189,11 +245,9 @@ function PDFViewer() {
 
             {downloading ? "Downloading..." : "Download PDF"}
           </button>
-
         </div>
 
         <div className="pdf-frame-container">
-
           {loading && (
             <div className="pdf-loading">
               <LoaderCircle size={30} />
@@ -209,17 +263,44 @@ function PDFViewer() {
           )}
 
           {!loading && !error && pdfUrl && (
-            <iframe
-              src={pdfUrl}
-              title="Study Material PDF"
-              className="pdf-frame"
-            />
+            <div className="pdf-pages-container">
+              <Document
+                file={pdfUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={onDocumentLoadError}
+                loading={
+                  <div className="pdf-loading">
+                    <LoaderCircle size={30} />
+                    <p>Rendering PDF...</p>
+                  </div>
+                }
+                error={
+                  <div className="pdf-error">
+                    Unable to render this PDF.
+                  </div>
+                }
+              >
+                {Array.from(
+                  new Array(numPages),
+                  (_, index) => (
+                    <div
+                      className="pdf-page-wrapper"
+                      key={`page_${index + 1}`}
+                    >
+                      <Page
+                        pageNumber={index + 1}
+                        width={pdfWidth}
+                        renderTextLayer
+                        renderAnnotationLayer
+                      />
+                    </div>
+                  )
+                )}
+              </Document>
+            </div>
           )}
-
         </div>
-
       </main>
-
     </div>
   );
 }

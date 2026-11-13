@@ -1,13 +1,21 @@
 
+/* ==========================================
+   PDF VIEWER PAGE
+========================================== */
+
 .pdf-viewer-page {
   min-height: 100vh;
   background: #f3f5fa;
 }
 
+/* ==========================================
+   HEADER
+========================================== */
+
 .pdf-viewer-header {
-  height: 72px;
+  min-height: 72px;
   padding: 0 6%;
-  background: white;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -21,109 +29,6 @@
   text-decoration: none;
 }
 
-.pdf-back-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #475569;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.pdf-viewer-container {
-  max-width: 1250px;
-  margin: 30px auto;
-  padding: 0 20px;
-}
-
-.pdf-document-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px 12px 0 0;
-}
-
-.pdf-document-heading > div {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  color: #2457d6;
-}
-
-.pdf-document-heading h2 {
-  margin: 0 0 5px;
-  color: #172033;
-  font-size: 19px;
-}
-
-.pdf-document-heading p {
-  margin: 0;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.pdf-download-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: #2457d6;
-  color: white;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.pdf-frame-container {
-  height: 75vh;
-  min-height: 500px;
-  background: #334155;
-  padding: 12px;
-  border-radius: 0 0 12px 12px;
-}
-
-.pdf-frame {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: white;
-}
-
-.pdf-status {
-  padding: 30px;
-  text-align: center;
-  background: white;
-  border-radius: 12px;
-  color: #475569;
-}
-
-.pdf-status.error {
-  color: #dc2626;
-}
-
-@media (max-width: 600px) {
-  .pdf-viewer-header {
-    padding: 0 15px;
-  }
-
-  .pdf-brand {
-    font-size: 17px;
-  }
-
-  .pdf-document-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .pdf-frame-container {
-    height: 65vh;
-    min-height: 400px;
-  }
-}
 .pdf-back-link {
   display: inline-flex;
   align-items: center;
@@ -143,4 +48,264 @@
   background: #f1f5f9;
   border-color: #94a3b8;
   transform: translateX(-3px);
+}
+
+/* ==========================================
+   MAIN CONTAINER
+========================================== */
+
+.pdf-viewer-container {
+  width: 100%;
+  max-width: 1250px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+/* ==========================================
+   DOCUMENT HEADING
+========================================== */
+
+.pdf-document-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px 12px 0 0;
+}
+
+.pdf-document-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #2457d6;
+}
+
+.pdf-document-heading h2 {
+  margin: 0 0 5px;
+  color: #172033;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.pdf-document-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* ==========================================
+   DOWNLOAD BUTTON
+========================================== */
+
+.pdf-download-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #2457d6;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pdf-download-button:hover:not(:disabled) {
+  background: #1945b5;
+}
+
+.pdf-download-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   PDF VIEWER CONTAINER
+========================================== */
+
+.pdf-frame-container {
+  width: 100%;
+  min-height: 500px;
+  height: auto;
+  padding: 12px;
+  background: #334155;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+/* Old iframe is no longer used */
+.pdf-frame {
+  display: none;
+}
+
+/* ==========================================
+   REACT PDF PAGES
+========================================== */
+
+.pdf-pages-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 8px;
+  overflow-x: hidden;
+}
+
+.pdf-page-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+.pdf-page-wrapper .react-pdf__Page {
+  max-width: 100%;
+  background: #ffffff;
+}
+
+.pdf-page-wrapper .react-pdf__Page canvas {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+}
+
+.pdf-page-wrapper .react-pdf__Page__textContent,
+.pdf-page-wrapper .react-pdf__Page__annotations {
+  max-width: 100%;
+}
+
+/* ==========================================
+   LOADING STATE
+========================================== */
+
+.pdf-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 250px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.pdf-loading svg {
+  animation: pdf-spin 1s linear infinite;
+}
+
+@keyframes pdf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================
+   ERROR STATE
+========================================== */
+
+.pdf-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 250px;
+  padding: 20px;
+  color: #fecaca;
+  text-align: center;
+}
+
+.pdf-status {
+  padding: 30px;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 12px;
+  color: #475569;
+}
+
+.pdf-status.error {
+  color: #dc2626;
+}
+
+/* ==========================================
+   MOBILE RESPONSIVENESS
+========================================== */
+
+@media (max-width: 600px) {
+  .pdf-viewer-header {
+    min-height: 60px;
+    padding: 0 15px;
+  }
+
+  .pdf-brand {
+    font-size: 17px;
+  }
+
+  .pdf-back-link {
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+
+  .pdf-viewer-container {
+    margin: 15px auto;
+    padding: 0 10px;
+  }
+
+  .pdf-document-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 15px;
+  }
+
+  .pdf-document-heading h2 {
+    font-size: 17px;
+  }
+
+  .pdf-download-button {
+    width: 100%;
+    padding: 11px;
+  }
+
+  .pdf-frame-container {
+    min-height: 400px;
+    padding: 6px;
+  }
+
+  .pdf-pages-container {
+    padding: 10px 2px;
+    gap: 12px;
+  }
+
+  .pdf-page-wrapper {
+    border-radius: 3px;
+  }
+}
+
+/* ==========================================
+   TABLET RESPONSIVENESS
+========================================== */
+
+@media (min-width: 601px) and (max-width: 900px) {
+  .pdf-viewer-container {
+    padding: 0 15px;
+  }
+
+  .pdf-frame-container {
+    padding: 8px;
+  }
+
+  .pdf-pages-container {
+    gap: 15px;
+  }
 }
