@@ -345,3 +345,134 @@
     transform: rotate(360deg);
   }
 }
+
+/* PDF DOCUMENT TITLE */
+.pdf-document-title {
+  min-width: 0;
+}
+
+.pdf-document-title h2 {
+  max-width: 650px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* PDF TOOLBAR */
+.pdf-toolbar {
+  min-height: 58px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pdf-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-tool-button {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #e1e5ec;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #344256;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pdf-tool-button:hover:not(:disabled) {
+  background: #edf3ff;
+  color: #2459df;
+}
+
+.pdf-tool-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pdf-zoom-value,
+.pdf-page-count {
+  min-width: 54px;
+  text-align: center;
+  color: #344256;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pdf-fit-button,
+.pdf-fullscreen-button {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* FULLSCREEN READER */
+.pdf-viewer-fullscreen {
+  width: 100%;
+  height: 100vh;
+  max-width: none;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  background: #f3f5fa;
+}
+
+.pdf-viewer-fullscreen .pdf-frame-container {
+  min-height: calc(100vh - 180px);
+}
+
+/* PDF LOADING SPINNER */
+.pdf-spin {
+  animation: pdf-spin 1s linear infinite;
+}
+
+@keyframes pdf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* MOBILE TOOLBAR */
+@media (max-width: 600px) {
+  .pdf-toolbar {
+    justify-content: center;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .pdf-toolbar-group {
+    gap: 5px;
+  }
+
+  .pdf-tool-button {
+    min-width: 32px;
+    height: 34px;
+    padding: 0 7px;
+  }
+
+  .pdf-fit-button span,
+  .pdf-fullscreen-button span {
+    display: none;
+  }
+
+  .pdf-document-title h2 {
+    max-width: 190px;
+    font-size: 15px;
+  }
+
+  .pdf-viewer-fullscreen {
+    padding: 8px;
+  }
+}
