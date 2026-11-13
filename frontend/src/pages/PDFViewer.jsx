@@ -1,8 +1,17 @@
 
-import { memo, useEffect, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  forwardRef,
+} from "react";
+
 import { useParams, Link } from "react-router-dom";
 
 import { Document, Page, pdfjs } from "react-pdf";
+import HTMLFlipBook from "react-pageflip";
 
 import {
   ArrowLeft,
@@ -74,6 +83,7 @@ function formatFileSize(bytes) {
   }
 
   if (size < 1024) return `${size} B`;
+
   if (size < 1024 * 1024) {
     return `${(size / 1024).toFixed(1)} KB`;
   }
@@ -81,75 +91,40 @@ function formatFileSize(bytes) {
   return `${(size / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-// LAZY PDF PAGE
-const LazyPDFPage = memo(function LazyPDFPage({
-  pageNumber,
-  width,
-}) {
-  const [shouldRender, setShouldRender] = useState(
-    pageNumber <= 2
-  );
-
-  const [container, setContainer] = useState(null);
-
-  useEffect(() => {
-    if (shouldRender || !container) return;
-
-    if (!("IntersectionObserver" in window)) {
-      setShouldRender(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setShouldRender(true);
-          observer.disconnect();
-        }
-      },
-      {
-        rootMargin: "800px 0px",
-      }
-    );
-
-    observer.observe(container);
-
-    return () => observer.disconnect();
-  }, [container, shouldRender]);
-
+// PAGE COMPONENT REQUIRED BY REACT-PAGEFLIP
+const FlipPDFPage = forwardRef(function FlipPDFPage(
+  { pageNumber, width },
+  ref
+) {
   return (
     <div
-      id={`pdf-page-${pageNumber}`}
-      ref={setContainer}
-      className="pdf-page-wrapper"
+      ref={ref}
+      className="flip-pdf-page"
       data-page-number={pageNumber}
     >
-      {shouldRender ? (
+      <div className="flip-pdf-page-content">
         <Page
           pageNumber={pageNumber}
           width={width}
           renderTextLayer={false}
           renderAnnotationLayer={false}
           loading={
-            <div className="pdf-page-placeholder">
+            <div className="flip-pdf-placeholder">
               <LoaderCircle size={22} />
-              <span>Rendering page {pageNumber}...</span>
+              <span>Loading page {pageNumber}...</span>
             </div>
           }
         />
-      ) : (
-        <div
-          className="pdf-page-placeholder"
-          style={{
-            minHeight: `${width * 1.414}px`,
-          }}
-        >
-          <span>Page {pageNumber}</span>
-        </div>
-      )}
+
+        <span className="flip-pdf-page-number">
+          {pageNumber}
+        </span>
+      </div>
     </div>
   );
 });
+
+FlipPDFPage.displayName = "FlipPDFPage";
 
 // MAIN PDF VIEWER
 function PDFViewer() {
@@ -162,7 +137,8 @@ function PDFViewer() {
   } = useParams();
 
   const viewerRef = useRef(null);
-  const pdfContainerRef = useRef(null);
+  const bookContainerRef = useRef(null);
+  const bookRef = useRef(null);
 
   const [pdfUrl, setPdfUrl] = useState("");
   const [fileName, setFileName] = useState("Study Material.pdf");
@@ -178,15 +154,13 @@ function PDFViewer() {
   const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Actual PDF viewer width, not browser window width.
-  const [containerWidth, setContainerWidth] = useState(800);
+  const [containerWidth, setContainerWidth] = useState(900);
 
   const isMobile = containerWidth <= 700;
-  const pageStep = isMobile ? 1 : 2;
 
-  // MEASURE ACTUAL PDF CONTAINER WIDTH
+  // MEASURE AVAILABLE BOOK WIDTH
   useEffect(() => {
-    const element = pdfContainerRef.current;
+    const element = bookContainerRef.current;
 
     if (!element) return;
 
@@ -201,11 +175,11 @@ function PDFViewer() {
     updateWidth();
 
     if ("ResizeObserver" in window) {
-      const resizeObserver = new ResizeObserver(updateWidth);
+      const observer = new ResizeObserver(updateWidth);
 
-      resizeObserver.observe(element);
+      observer.observe(element);
 
-      return () => resizeObserver.disconnect();
+      return () => observer.disconnect();
     }
 
     window.addEventListener("resize", updateWidth);
@@ -213,7 +187,7 @@ function PDFViewer() {
     return () => {
       window.removeEventListener("resize", updateWidth);
     };
-  }, [pdfUrl, isFullscreen]);
+  }, [pdfUrl, isFullscreen, loading]);
 
   // FULLSCREEN STATE
   useEffect(() => {
@@ -236,7 +210,7 @@ function PDFViewer() {
     };
   }, []);
 
-  // FETCH SIGNED PDF URL AND FILE DETAILS
+  // FETCH SIGNED PDF URL
   useEffect(() => {
     let cancelled = false;
 
@@ -304,11 +278,11 @@ function PDFViewer() {
   }, [materialId]);
 
   // PDF LOAD SUCCESS
-  function onDocumentLoadSuccess({ numPages }) {
+  const onDocumentLoadSuccess = useCallback(({ numPages }) => {
     setNumPages(numPages);
     setCurrentPage(1);
     setError("");
-  }
+  }, []);
 
   // PDF LOAD ERROR
   function onDocumentLoadError(err) {
@@ -319,94 +293,31 @@ function PDFViewer() {
     );
   }
 
-  // TRACK CURRENT SPREAD WHILE SCROLLING
-  useEffect(() => {
-    if (!numPages) return;
+  // PAGE FLIP EVENT
+  const onFlip = useCallback((event) => {
+    // React PageFlip page indexes start at zero.
+    setCurrentPage(event.data + 1);
+  }, []);
 
-    const pageElements = document.querySelectorAll(
-      ".pdf-page-wrapper[data-page-number]"
-    );
-
-    if (!pageElements.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visiblePages = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort(
-            (a, b) =>
-              a.boundingClientRect.top -
-              b.boundingClientRect.top
-          );
-
-        if (visiblePages.length) {
-          const pageNumber = Number(
-            visiblePages[0].target.dataset.pageNumber
-          );
-
-          if (pageNumber) {
-            const spreadStart = isMobile
-              ? pageNumber
-              : Math.floor((pageNumber - 1) / 2) * 2 + 1;
-
-            setCurrentPage(spreadStart);
-          }
-        }
-      },
-      {
-        threshold: [0.25, 0.5, 0.75],
-      }
-    );
-
-    pageElements.forEach((element) => {
-      observer.observe(element);
-    });
-
-    return () => observer.disconnect();
-  }, [numPages, pdfUrl, isMobile]);
-
-  // GO TO PAGE OR SPREAD
-  function goToPage(page) {
-    if (!numPages) return;
-
-    const safePage = Math.max(
-      1,
-      Math.min(numPages, Number(page) || 1)
-    );
-
-    const targetPage = isMobile
-      ? safePage
-      : Math.floor((safePage - 1) / 2) * 2 + 1;
-
-    setCurrentPage(targetPage);
-
-    document
-      .getElementById(`pdf-page-${targetPage}`)
-      ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+  // PAGE FLIP NAVIGATION
+  function previousPage() {
+    bookRef.current?.pageFlip()?.flipPrev();
   }
 
-  // PREVIOUS AND NEXT SPREAD
-  function previousSpread() {
-    goToPage(currentPage - pageStep);
-  }
-
-  function nextSpread() {
-    goToPage(currentPage + pageStep);
+  function nextPage() {
+    bookRef.current?.pageFlip()?.flipNext();
   }
 
   // ZOOM CONTROLS
   function zoomIn() {
     setZoom((previous) =>
-      Math.min(2, Number((previous + 0.1).toFixed(1)))
+      Math.min(1.8, Number((previous + 0.1).toFixed(1)))
     );
   }
 
   function zoomOut() {
     setZoom((previous) =>
-      Math.max(0.5, Number((previous - 0.1).toFixed(1)))
+      Math.max(0.6, Number((previous - 0.1).toFixed(1)))
     );
   }
 
@@ -417,6 +328,32 @@ function PDFViewer() {
   function fitToWidth() {
     setZoom(1);
   }
+
+  // KEYBOARD NAVIGATION
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        nextPage();
+      }
+
+      if (event.key === "ArrowLeft") {
+        previousPage();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  });
 
   // FULLSCREEN
   async function toggleFullscreen() {
@@ -488,17 +425,24 @@ function PDFViewer() {
     }
   }
 
-  // FIXED WIDTH CALCULATION
-  const availableWidth = Math.max(
+  // BOOK DIMENSIONS
+  const availablePageWidth = isMobile
+    ? containerWidth - 24
+    : (containerWidth - 40) / 2;
+
+  const pageWidth = Math.max(
     240,
-    containerWidth - 24
+    Math.min(availablePageWidth, 480)
   );
 
-  const singlePageWidth = isMobile
-    ? availableWidth
-    : Math.max(200, (availableWidth - 20) / 2);
+  const pageHeight = Math.round(pageWidth * 1.414);
 
-  const pdfWidth = Math.round(singlePageWidth * zoom);
+  const renderedPageWidth = Math.round(pageWidth * zoom);
+
+  // FLIPBOOK NAVIGATION LABEL
+  const lastVisiblePage = isMobile
+    ? currentPage
+    : Math.min(currentPage + 1, numPages);
 
   return (
     <div className="pdf-viewer-page">
@@ -553,14 +497,14 @@ function PDFViewer() {
           </button>
         </div>
 
-        {/* PDF TOOLBAR */}
-        {!loading && !error && pdfUrl && (
+        {/* READER TOOLBAR */}
+        {!loading && !error && pdfUrl && numPages > 0 && (
           <div className="pdf-toolbar">
             <div className="pdf-toolbar-group">
               <button
                 type="button"
                 onClick={zoomOut}
-                disabled={zoom <= 0.5}
+                disabled={zoom <= 0.6}
                 title="Zoom out"
                 className="pdf-tool-button"
               >
@@ -574,7 +518,7 @@ function PDFViewer() {
               <button
                 type="button"
                 onClick={zoomIn}
-                disabled={zoom >= 2}
+                disabled={zoom >= 1.8}
                 title="Zoom in"
                 className="pdf-tool-button"
               >
@@ -593,7 +537,7 @@ function PDFViewer() {
               <button
                 type="button"
                 onClick={fitToWidth}
-                title="Fit to width"
+                title="Fit width"
                 className="pdf-tool-button pdf-fit-button"
               >
                 <Expand size={16} />
@@ -601,39 +545,32 @@ function PDFViewer() {
               </button>
             </div>
 
-            {/* SPREAD NAVIGATION */}
             <div className="pdf-toolbar-group pdf-page-navigation">
               <button
                 type="button"
-                onClick={previousSpread}
+                onClick={previousPage}
                 disabled={currentPage <= 1}
-                title="Previous spread"
+                title="Previous page"
                 className="pdf-tool-button"
               >
                 <ChevronLeft size={19} />
               </button>
 
               <span className="pdf-page-count">
-                {isMobile
-                  ? `${currentPage} / ${numPages}`
-                  : `${currentPage}-${Math.min(
-                      currentPage + 1,
-                      numPages
-                    )} / ${numPages}`}
+                {currentPage}–{lastVisiblePage} / {numPages}
               </span>
 
               <button
                 type="button"
-                onClick={nextSpread}
-                disabled={currentPage + pageStep > numPages}
-                title="Next spread"
+                onClick={nextPage}
+                disabled={currentPage >= numPages}
+                title="Next page"
                 className="pdf-tool-button"
               >
                 <ChevronRight size={19} />
               </button>
             </div>
 
-            {/* FULLSCREEN */}
             <button
               type="button"
               onClick={toggleFullscreen}
@@ -657,8 +594,11 @@ function PDFViewer() {
           </div>
         )}
 
-        {/* PDF VIEWER */}
-        <div className="pdf-frame-container">
+        {/* BOOK AREA */}
+        <div
+          ref={bookContainerRef}
+          className="pdf-book-container"
+        >
           {loading && (
             <div className="pdf-loading">
               <LoaderCircle size={30} />
@@ -674,44 +614,74 @@ function PDFViewer() {
           )}
 
           {!loading && !error && pdfUrl && (
-            <div
-              ref={pdfContainerRef}
-              className="pdf-pages-container"
+            <Document
+              file={{ url: pdfUrl }}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
+              options={{
+                disableAutoFetch: false,
+                rangeChunkSize: 65536,
+              }}
+              loading={
+                <div className="pdf-loading">
+                  <LoaderCircle size={30} />
+                  <p>Loading PDF document...</p>
+                </div>
+              }
+              error={
+                <div className="pdf-error">
+                  Unable to render this PDF.
+                </div>
+              }
             >
-              <Document
-                file={{ url: pdfUrl }}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-                options={{
-                  disableAutoFetch: false,
-                  rangeChunkSize: 65536,
-                }}
-                loading={
-                  <div className="pdf-loading">
-                    <LoaderCircle size={30} />
-                    <p>Loading PDF pages...</p>
-                  </div>
-                }
-                error={
-                  <div className="pdf-error">
-                    Unable to render this PDF.
-                  </div>
-                }
-              >
-                {Array.from(
-                  { length: numPages },
-                  (_, index) => (
-                    <LazyPDFPage
-                      key={`page_${index + 1}`}
-                      pageNumber={index + 1}
-                      width={pdfWidth}
-                    />
-                  )
-                )}
-              </Document>
-            </div>
+              {numPages > 0 && (
+                <HTMLFlipBook
+                  ref={bookRef}
+                  key={`${materialId}-${isMobile ? "mobile" : "desktop"}`}
+                  width={pageWidth}
+                  height={pageHeight}
+                  size="fixed"
+                  minWidth={240}
+                  maxWidth={480}
+                  minHeight={340}
+                  maxHeight={680}
+                  drawShadow={true}
+                  flippingTime={900}
+                  usePortrait={true}
+                  startPage={0}
+                  autoSize={true}
+                  maxShadowOpacity={0.45}
+                  showCover={false}
+                  mobileScrollSupport={false}
+                  useMouseEvents={true}
+                  swipeDistance={30}
+                  clickEventForward={true}
+                  onFlip={onFlip}
+                  className="nie-flip-book"
+                  style={{ margin: "0 auto" }}
+                >
+                  {Array.from(
+                    { length: numPages },
+                    (_, index) => (
+                      <FlipPDFPage
+                        key={`flip-page-${index + 1}`}
+                        pageNumber={index + 1}
+                        width={renderedPageWidth}
+                      />
+                    )
+                  )}
+                </HTMLFlipBook>
+              )}
+            </Document>
           )}
         </div>
+
+        {/* READER HINT */}
+        {!loading && !error && numPages > 0 && (
+          <p className="pdf-reader-hint">
+            Drag a page corner or use the arrows to turn pages
+          </p>
+        )}
       </main>
     </div>
   );
