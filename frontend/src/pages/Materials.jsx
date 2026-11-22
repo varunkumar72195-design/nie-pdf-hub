@@ -1,10 +1,10 @@
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
   ArrowDownToLine,
   ArrowLeft,
-  ArrowRight,
   BookOpen,
   FileText,
   RefreshCw,
@@ -20,6 +20,7 @@ import {
   Copy,
   Check,
   X,
+  LoaderCircle,
 } from "lucide-react";
 
 import {
@@ -35,12 +36,7 @@ import API from "../services/api";
 import "../styles/materials.css";
 
 function Materials() {
-  const {
-    departmentId,
-    yearId,
-    semesterId,
-    subjectId,
-  } = useParams();
+  const { departmentId, yearId, semesterId, subjectId } = useParams();
 
   const [materials, setMaterials] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,12 +49,13 @@ function Materials() {
   const [subjectName, setSubjectName] = useState("");
 
   const [activeShareId, setActiveShareId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
   const [toast, setToast] = useState("");
 
   const shareAreaRef = useRef(null);
   const toastTimerRef = useRef(null);
 
-  // SHOW CUSTOM NOTIFICATION
+  // CUSTOM TOAST
   const showToast = useCallback((message) => {
     setToast(message);
 
@@ -68,10 +65,9 @@ function Materials() {
 
     toastTimerRef.current = setTimeout(() => {
       setToast("");
-    }, 2500);
+    }, 3000);
   }, []);
 
-  // CLEAN UP TOAST TIMER
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) {
@@ -80,7 +76,7 @@ function Materials() {
     };
   }, []);
 
-  // CLOSE SHARE MENU WHEN CLICKING OUTSIDE
+  // CLOSE SHARE MENU
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
@@ -106,7 +102,7 @@ function Materials() {
     };
   }, []);
 
-  // FETCH CURRENT LOCATION DETAILS
+  // FETCH LOCATION DETAILS
   useEffect(() => {
     let active = true;
 
@@ -207,26 +203,19 @@ function Materials() {
 
       setMaterials(response.data);
     } catch (err) {
-      console.error("Materials API Error:", {
-        message: err.message,
-        status: err.response?.status,
-        response: err.response?.data,
-        url: err.config?.url,
-      });
+      console.error("Materials API Error:", err);
 
       setMaterials([]);
 
-      if (err.response) {
-        const detail = err.response.data?.detail;
+      const detail = err.response?.data?.detail;
 
-        setError(
-          typeof detail === "string"
-            ? detail
-            : `Unable to load materials (${err.response.status}).`
-        );
-      } else {
-        setError(err.message || "Unable to connect to the server.");
-      }
+      setError(
+        typeof detail === "string"
+          ? detail
+          : err.response
+            ? `Unable to load materials (${err.response.status}).`
+            : err.message || "Unable to connect to the server."
+      );
     } finally {
       setLoading(false);
     }
@@ -236,7 +225,7 @@ function Materials() {
     fetchMaterials();
   }, [fetchMaterials]);
 
-  // SEARCH FILTER
+  // SEARCH
   const filteredMaterials = materials.filter((material) => {
     const search = searchTerm.toLowerCase().trim();
 
@@ -247,7 +236,7 @@ function Materials() {
     );
   });
 
-  // PERMANENT NIE PDF HUB MATERIAL LINK
+  // PERMANENT PORTAL LINK FOR SHARING
   const getMaterialShareUrl = (material) => {
     return new URL(
       `/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects/${subjectId}/materials/${material.id}`,
@@ -255,24 +244,11 @@ function Materials() {
     ).href;
   };
 
-  // FILE URL
-  const getFileUrl = (path) => {
-    if (!path) return "#";
-
-    try {
-      return new URL(path, API.defaults.baseURL).href;
-    } catch {
-      return path;
-    }
-  };
-
   // FILE SIZE
   const formatFileSize = (bytes) => {
     if (!bytes || bytes <= 0) return "Size unavailable";
 
-    if (bytes < 1024) {
-      return `${bytes} B`;
-    }
+    if (bytes < 1024) return `${bytes} B`;
 
     if (bytes < 1024 * 1024) {
       return `${(bytes / 1024).toFixed(1)} KB`;
@@ -281,7 +257,7 @@ function Materials() {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  // UPLOAD DATE
+  // DATE
   const formatDate = (date) => {
     if (!date) return "Date unavailable";
 
@@ -298,7 +274,80 @@ function Materials() {
     });
   };
 
-  // COPY LINK WITHOUT BROWSER ALERT
+  // DOWNLOAD PDF USING A FRESH SIGNED URL
+  const handleDownload = async (material) => {
+    if (downloadingId !== null) return;
+
+    try {
+      setDownloadingId(material.id);
+      setActiveShareId(null);
+
+      // Request a fresh URL from FastAPI on every click.
+      const response = await API.get(
+        `/materials/${material.id}/download`
+      );
+
+      // Supports common JSON response field names.
+      const downloadUrl =
+        typeof response.data === "string"
+          ? response.data
+          : response.data?.download_url ||
+            response.data?.url ||
+            response.data?.signed_url;
+
+      if (!downloadUrl) {
+        throw new Error(
+          "The server did not return a download URL."
+        );
+      }
+
+      // Validate URL before navigating.
+      const parsedUrl = new URL(downloadUrl);
+
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        throw new Error("Invalid download URL received.");
+      }
+
+      // Create a temporary download link.
+      const link = document.createElement("a");
+
+      link.href = parsedUrl.href;
+      link.download =
+        material.file_name ||
+        material.title ||
+        "study-material.pdf";
+
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast("Your PDF download has started.");
+    } catch (err) {
+      console.error("PDF download error:", {
+        message: err.message,
+        status: err.response?.status,
+        response: err.response?.data,
+        url: err.config?.url,
+      });
+
+      const detail = err.response?.data?.detail;
+
+      showToast(
+        typeof detail === "string"
+          ? detail
+          : err.response
+            ? `Download failed (${err.response.status}). Please try again.`
+            : err.message || "Unable to download PDF."
+      );
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  // COPY SHARE LINK
   const copyMaterialLink = async (material) => {
     const shareUrl = getMaterialShareUrl(material);
 
@@ -332,7 +381,7 @@ function Materials() {
     }
   };
 
-  // SHARE TO SOCIAL APPS
+  // SOCIAL SHARING
   const shareToApp = (app, material) => {
     const shareUrl = getMaterialShareUrl(material);
 
@@ -346,13 +395,9 @@ function Materials() {
 
     const shareLinks = {
       whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
-
       telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
-
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-
       email: `mailto:?subject=${encodeURIComponent(
         shareTitle
       )}&body=${encodedText}%0A%0A${encodedUrl}`,
@@ -376,7 +421,7 @@ function Materials() {
     );
   };
 
-  // TOGGLE SHARE MENU
+  // SHARE MENU
   const toggleShareMenu = (materialId) => {
     setActiveShareId((current) =>
       current === materialId ? null : materialId
@@ -415,7 +460,6 @@ function Materials() {
         </p>
       </header>
 
-      {/* MAIN CONTENT */}
       <main className="materials-content">
         {/* BACK BUTTON */}
         <div className="materials-navigation">
@@ -457,27 +501,21 @@ function Materials() {
           </span>
         </nav>
 
-        {/* CURRENT LOCATION */}
+        {/* CONTEXT */}
         <div className="materials-context">
           <div className="materials-context-item">
             <Building2 size={17} />
-            <span>
-              {departmentName || `Department ${departmentId}`}
-            </span>
+            <span>{departmentName || `Department ${departmentId}`}</span>
           </div>
 
           <div className="materials-context-item">
             <GraduationCap size={18} />
-            <span>
-              {academicYearName || `Academic Year ${yearId}`}
-            </span>
+            <span>{academicYearName || `Academic Year ${yearId}`}</span>
           </div>
 
           <div className="materials-context-item">
             <Layers size={17} />
-            <span>
-              {semesterName || `Semester ${semesterId}`}
-            </span>
+            <span>{semesterName || `Semester ${semesterId}`}</span>
           </div>
 
           <div className="materials-context-item">
@@ -542,7 +580,7 @@ function Materials() {
           </div>
         )}
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {!loading && !error && materials.length === 0 && (
           <div className="materials-status">
             <BookOpen size={34} />
@@ -553,7 +591,7 @@ function Materials() {
           </div>
         )}
 
-        {/* NO SEARCH RESULTS */}
+        {/* NO RESULTS */}
         {!loading &&
           !error &&
           materials.length > 0 &&
@@ -603,7 +641,7 @@ function Materials() {
                   </p>
                 )}
 
-                {/* PDF ACTIONS */}
+                {/* ACTIONS */}
                 <div className="material-actions">
                   <Link
                     to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects/${subjectId}/materials/${material.id}`}
@@ -613,23 +651,29 @@ function Materials() {
                     View PDF
                   </Link>
 
-                  <a
-                    href={getFileUrl(material.download_url)}
+                  <button
+                    type="button"
                     className="material-download-button"
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(event) => {
-                      if (!material.download_url) {
-                        event.preventDefault();
-                        showToast("Download link is not available.");
-                      }
-                    }}
+                    onClick={() => handleDownload(material)}
+                    disabled={downloadingId === material.id}
                   >
-                    <ArrowDownToLine size={18} />
-                    Download
-                  </a>
+                    {downloadingId === material.id ? (
+                      <>
+                        <LoaderCircle
+                          size={18}
+                          className="materials-spinner"
+                        />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownToLine size={18} />
+                        Download
+                      </>
+                    )}
+                  </button>
 
-                  {/* SHARE AREA */}
+                  {/* SHARE */}
                   <div
                     className="material-share-area"
                     ref={
