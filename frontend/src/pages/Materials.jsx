@@ -68,6 +68,7 @@ function Materials() {
     }, 3000);
   }, []);
 
+  // CLEANUP
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) {
@@ -236,12 +237,23 @@ function Materials() {
     );
   });
 
-  // PERMANENT PORTAL LINK FOR SHARING
+  // PERMANENT PORTAL SHARE LINK
   const getMaterialShareUrl = (material) => {
     return new URL(
       `/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects/${subjectId}/materials/${material.id}`,
       window.location.origin
     ).href;
+  };
+
+  // RESOLVE FILE URL
+  const getFileUrl = (path) => {
+    if (!path) return "";
+
+    try {
+      return new URL(path, API.defaults.baseURL).href;
+    } catch {
+      return path;
+    }
   };
 
   // FILE SIZE
@@ -257,7 +269,7 @@ function Materials() {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  // DATE
+  // UPLOAD DATE
   const formatDate = (date) => {
     if (!date) return "Date unavailable";
 
@@ -274,7 +286,7 @@ function Materials() {
     });
   };
 
-  // DOWNLOAD PDF USING A FRESH SIGNED URL
+  // DOWNLOAD PDF
   const handleDownload = async (material) => {
     if (downloadingId !== null) return;
 
@@ -282,49 +294,47 @@ function Materials() {
       setDownloadingId(material.id);
       setActiveShareId(null);
 
-      // Request a fresh URL from FastAPI on every click.
-      const response = await API.get(
-        `/materials/${material.id}/download`
-      );
+      let downloadUrl = material.download_url;
 
-      // Supports common JSON response field names.
-      const downloadUrl =
-        typeof response.data === "string"
-          ? response.data
-          : response.data?.download_url ||
-            response.data?.url ||
-            response.data?.signed_url;
+      // If URL is missing, request a fresh URL.
+      if (!downloadUrl) {
+        const response = await API.get(
+          `/materials/${material.id}/download`
+        );
+
+        downloadUrl =
+          typeof response.data === "string"
+            ? response.data
+            : response.data?.download_url ||
+              response.data?.url ||
+              response.data?.signed_url;
+      }
 
       if (!downloadUrl) {
-        throw new Error(
-          "The server did not return a download URL."
-        );
+        throw new Error("Download URL is not available.");
       }
 
-      // Validate URL before navigating.
-      const parsedUrl = new URL(downloadUrl);
+      const finalUrl = getFileUrl(downloadUrl);
+      const parsedUrl = new URL(finalUrl);
 
-      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-        throw new Error("Invalid download URL received.");
+      if (!["https:", "http:"].includes(parsedUrl.protocol)) {
+        throw new Error("Invalid PDF download URL.");
       }
 
-      // Create a temporary download link.
+      // Trigger browser download/navigation.
       const link = document.createElement("a");
 
       link.href = parsedUrl.href;
-      link.download =
-        material.file_name ||
-        material.title ||
-        "study-material.pdf";
-
       link.target = "_blank";
       link.rel = "noopener noreferrer";
+      link.download =
+        material.file_name || "study-material.pdf";
 
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
 
-      showToast("Your PDF download has started.");
+      showToast("Opening your PDF download...");
     } catch (err) {
       console.error("PDF download error:", {
         message: err.message,
@@ -339,7 +349,7 @@ function Materials() {
         typeof detail === "string"
           ? detail
           : err.response
-            ? `Download failed (${err.response.status}). Please try again.`
+            ? `Download failed (${err.response.status}).`
             : err.message || "Unable to download PDF."
       );
     } finally {
@@ -381,7 +391,7 @@ function Materials() {
     }
   };
 
-  // SOCIAL SHARING
+  // SHARE TO SOCIAL APPS
   const shareToApp = (app, material) => {
     const shareUrl = getMaterialShareUrl(material);
 
@@ -395,9 +405,13 @@ function Materials() {
 
     const shareLinks = {
       whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
+
       telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
+
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+
       email: `mailto:?subject=${encodeURIComponent(
         shareTitle
       )}&body=${encodedText}%0A%0A${encodedUrl}`,
@@ -421,7 +435,7 @@ function Materials() {
     );
   };
 
-  // SHARE MENU
+  // TOGGLE SHARE MENU
   const toggleShareMenu = (materialId) => {
     setActiveShareId((current) =>
       current === materialId ? null : materialId
@@ -460,8 +474,8 @@ function Materials() {
         </p>
       </header>
 
+      {/* MAIN CONTENT */}
       <main className="materials-content">
-        {/* BACK BUTTON */}
         <div className="materials-navigation">
           <Link
             to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects`}
@@ -501,26 +515,34 @@ function Materials() {
           </span>
         </nav>
 
-        {/* CONTEXT */}
+        {/* CURRENT LOCATION */}
         <div className="materials-context">
           <div className="materials-context-item">
             <Building2 size={17} />
-            <span>{departmentName || `Department ${departmentId}`}</span>
+            <span>
+              {departmentName || `Department ${departmentId}`}
+            </span>
           </div>
 
           <div className="materials-context-item">
             <GraduationCap size={18} />
-            <span>{academicYearName || `Academic Year ${yearId}`}</span>
+            <span>
+              {academicYearName || `Academic Year ${yearId}`}
+            </span>
           </div>
 
           <div className="materials-context-item">
             <Layers size={17} />
-            <span>{semesterName || `Semester ${semesterId}`}</span>
+            <span>
+              {semesterName || `Semester ${semesterId}`}
+            </span>
           </div>
 
           <div className="materials-context-item">
             <BookMarked size={17} />
-            <span>{subjectName || `Subject ${subjectId}`}</span>
+            <span>
+              {subjectName || `Subject ${subjectId}`}
+            </span>
           </div>
         </div>
 
@@ -580,7 +602,7 @@ function Materials() {
           </div>
         )}
 
-        {/* EMPTY */}
+        {/* EMPTY STATE */}
         {!loading && !error && materials.length === 0 && (
           <div className="materials-status">
             <BookOpen size={34} />
@@ -591,7 +613,7 @@ function Materials() {
           </div>
         )}
 
-        {/* NO RESULTS */}
+        {/* NO SEARCH RESULTS */}
         {!loading &&
           !error &&
           materials.length > 0 &&
@@ -641,7 +663,7 @@ function Materials() {
                   </p>
                 )}
 
-                {/* ACTIONS */}
+                {/* PDF ACTIONS */}
                 <div className="material-actions">
                   <Link
                     to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects/${subjectId}/materials/${material.id}`}
@@ -673,7 +695,7 @@ function Materials() {
                     )}
                   </button>
 
-                  {/* SHARE */}
+                  {/* SHARE AREA */}
                   <div
                     className="material-share-area"
                     ref={
