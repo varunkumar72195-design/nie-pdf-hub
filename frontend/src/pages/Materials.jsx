@@ -277,83 +277,92 @@ function Materials() {
     });
   };
 
-  // DOWNLOAD PDF
-  const handleDownload = async (material) => {
-    if (downloadingId !== null) return;
+  
+const handleDownload = async (material) => {
+  if (downloadingId !== null) return;
 
-    try {
-      setDownloadingId(material.id);
-      setActiveShareId(null);
+  let objectUrl = null;
 
-      // Request a fresh signed URL from FastAPI
-      const response = await API.get(
-        `/materials/${material.id}/download`
-      );
+  try {
+    setDownloadingId(material.id);
+    setActiveShareId(null);
 
-      // Read the signed URL from the API response
-      const downloadUrl =
-        typeof response.data === "string"
-          ? response.data
-          : response.data?.download_url ||
-            response.data?.url ||
-            response.data?.signed_url;
+    // 1. Get a fresh Supabase signed URL from FastAPI
+    const response = await API.get(
+      `/materials/${material.id}/download`
+    );
 
-      if (!downloadUrl) {
-        throw new Error(
-          "The server did not return a download URL."
-        );
-      }
+    const downloadUrl =
+      typeof response.data === "string"
+        ? response.data
+        : response.data?.download_url ||
+          response.data?.url ||
+          response.data?.signed_url;
 
-      // Validate the signed URL
-      const parsedUrl = new URL(downloadUrl);
-
-      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-        throw new Error("Invalid download URL received.");
-      }
-
-      // Get the original filename
-      const fileName =
-        material.file_name ||
-        material.title ||
-        "study-material.pdf";
-
-      // Ask Supabase Storage to download the file
-      // instead of displaying it in the browser.
-      parsedUrl.searchParams.set("download", fileName);
-
-      // Create a temporary download link
-      const downloadLink = document.createElement("a");
-
-      downloadLink.href = parsedUrl.toString();
-      downloadLink.setAttribute("download", fileName);
-      downloadLink.style.display = "none";
-
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-
-      showToast("Your PDF download has started.");
-    } catch (err) {
-      console.error("PDF download error:", {
-        message: err.message,
-        status: err.response?.status,
-        response: err.response?.data,
-        url: err.config?.url,
-      });
-
-      const detail = err.response?.data?.detail;
-
-      showToast(
-        typeof detail === "string"
-          ? detail
-          : err.response
-            ? `Download failed (${err.response.status}). Please try again.`
-            : err.message || "Unable to download PDF."
-      );
-    } finally {
-      setDownloadingId(null);
+    if (!downloadUrl) {
+      throw new Error("Download URL was not returned by the server.");
     }
-  };
+
+    // 2. Request the actual PDF file
+    const pdfResponse = await fetch(downloadUrl);
+
+    if (!pdfResponse.ok) {
+      throw new Error(
+        `PDF download failed with status ${pdfResponse.status}`
+      );
+    }
+
+    // 3. Convert PDF response into a Blob
+    const pdfBlob = await pdfResponse.blob();
+
+    if (!pdfBlob.size) {
+      throw new Error("Downloaded PDF is empty.");
+    }
+
+    // 4. Create a temporary local download URL
+    objectUrl = URL.createObjectURL(pdfBlob);
+
+    const fileName =
+      material.file_name ||
+      material.title ||
+      "study-material.pdf";
+
+    // 5. Trigger download without navigating to another page
+    const link = document.createElement("a");
+
+    link.href = objectUrl;
+    link.download = fileName;
+    link.style.display = "none";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast("PDF downloaded successfully!");
+  } catch (err) {
+    console.error("PDF download error:", err);
+
+    if (
+      err instanceof TypeError &&
+      err.message.toLowerCase().includes("fetch")
+    ) {
+      showToast(
+        "Unable to access the PDF. Please check Supabase storage CORS settings."
+      );
+    } else {
+      showToast(
+        err.message || "Unable to download PDF. Please try again."
+      );
+    }
+  } finally {
+    if (objectUrl) {
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    }
+
+    setDownloadingId(null);
+  }
+};
+
 
   // COPY SHARE LINK
   const copyMaterialLink = async (material) => {
