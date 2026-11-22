@@ -68,7 +68,7 @@ function Materials() {
     }, 3000);
   }, []);
 
-  // CLEANUP
+  // CLEAN UP TOAST TIMER
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) {
@@ -226,7 +226,7 @@ function Materials() {
     fetchMaterials();
   }, [fetchMaterials]);
 
-  // SEARCH
+  // SEARCH MATERIALS
   const filteredMaterials = materials.filter((material) => {
     const search = searchTerm.toLowerCase().trim();
 
@@ -237,7 +237,7 @@ function Materials() {
     );
   });
 
-  // PERMANENT PORTAL SHARE LINK
+  // PERMANENT PORTAL LINK FOR SHARING
   const getMaterialShareUrl = (material) => {
     return new URL(
       `/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects/${subjectId}/materials/${material.id}`,
@@ -245,22 +245,13 @@ function Materials() {
     ).href;
   };
 
-  // RESOLVE FILE URL
-  const getFileUrl = (path) => {
-    if (!path) return "";
-
-    try {
-      return new URL(path, API.defaults.baseURL).href;
-    } catch {
-      return path;
-    }
-  };
-
   // FILE SIZE
   const formatFileSize = (bytes) => {
     if (!bytes || bytes <= 0) return "Size unavailable";
 
-    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
 
     if (bytes < 1024 * 1024) {
       return `${(bytes / 1024).toFixed(1)} KB`;
@@ -294,47 +285,54 @@ function Materials() {
       setDownloadingId(material.id);
       setActiveShareId(null);
 
-      let downloadUrl = material.download_url;
+      // Request a fresh signed URL from FastAPI
+      const response = await API.get(
+        `/materials/${material.id}/download`
+      );
 
-      // If URL is missing, request a fresh URL.
+      // Read the signed URL from the API response
+      const downloadUrl =
+        typeof response.data === "string"
+          ? response.data
+          : response.data?.download_url ||
+            response.data?.url ||
+            response.data?.signed_url;
+
       if (!downloadUrl) {
-        const response = await API.get(
-          `/materials/${material.id}/download`
+        throw new Error(
+          "The server did not return a download URL."
         );
-
-        downloadUrl =
-          typeof response.data === "string"
-            ? response.data
-            : response.data?.download_url ||
-              response.data?.url ||
-              response.data?.signed_url;
       }
 
-      if (!downloadUrl) {
-        throw new Error("Download URL is not available.");
+      // Validate the signed URL
+      const parsedUrl = new URL(downloadUrl);
+
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        throw new Error("Invalid download URL received.");
       }
 
-      const finalUrl = getFileUrl(downloadUrl);
-      const parsedUrl = new URL(finalUrl);
+      // Get the original filename
+      const fileName =
+        material.file_name ||
+        material.title ||
+        "study-material.pdf";
 
-      if (!["https:", "http:"].includes(parsedUrl.protocol)) {
-        throw new Error("Invalid PDF download URL.");
-      }
+      // Ask Supabase Storage to download the file
+      // instead of displaying it in the browser.
+      parsedUrl.searchParams.set("download", fileName);
 
-      // Trigger browser download/navigation.
-      const link = document.createElement("a");
+      // Create a temporary download link
+      const downloadLink = document.createElement("a");
 
-      link.href = parsedUrl.href;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.download =
-        material.file_name || "study-material.pdf";
+      downloadLink.href = parsedUrl.toString();
+      downloadLink.setAttribute("download", fileName);
+      downloadLink.style.display = "none";
 
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
 
-      showToast("Opening your PDF download...");
+      showToast("Your PDF download has started.");
     } catch (err) {
       console.error("PDF download error:", {
         message: err.message,
@@ -349,7 +347,7 @@ function Materials() {
         typeof detail === "string"
           ? detail
           : err.response
-            ? `Download failed (${err.response.status}).`
+            ? `Download failed (${err.response.status}). Please try again.`
             : err.message || "Unable to download PDF."
       );
     } finally {
@@ -476,6 +474,7 @@ function Materials() {
 
       {/* MAIN CONTENT */}
       <main className="materials-content">
+        {/* BACK BUTTON */}
         <div className="materials-navigation">
           <Link
             to={`/departments/${departmentId}/years/${yearId}/semesters/${semesterId}/subjects`}
